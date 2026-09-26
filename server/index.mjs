@@ -20,13 +20,13 @@ const attempts = new Map()
 
 app.set('trust proxy', 1)
 app.use(helmet())
+app.use((req, res, next) => {
+  if (req.headers.origin && !origins.has(req.headers.origin)) return res.status(403).json({ error: 'Origin not allowed' })
+  next()
+})
 app.use(cors({ origin(origin, callback) { if (!origin || origins.has(origin)) callback(null, true); else callback(new Error('Origin not allowed')) }, credentials: true }))
 app.use(express.json({ limit: '64kb' }))
 app.use(cookieParser())
-app.use((req, res, next) => {
-  if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && req.headers.origin && !origins.has(req.headers.origin)) return res.status(403).json({ error: 'Origin not allowed' })
-  next()
-})
 
 const accountFields = `id, username, display_name AS "displayName", role, program, status, must_change_password AS "mustChangePassword"`
 const normalize = (value) => value.trim().toLowerCase()
