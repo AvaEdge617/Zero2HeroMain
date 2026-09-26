@@ -6,7 +6,7 @@ services:
     region: oregon
     autoDeploy: true
     buildCommand: pnpm install --frozen-lockfile
-    startCommand: pnpm server
+    startCommand: node server/index.mjs
     healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
