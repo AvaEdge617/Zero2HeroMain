@@ -1,6 +1,8 @@
 # Zero 2 Hero
 
-GitHub owner for this project: **avaedge617**. The local workspace is prepared for that account, but no GitHub remote has been created or guessed.
+GitHub repository: **[AvaEdge617/Zero2HeroMain](https://github.com/AvaEdge617/Zero2HeroMain)**. The local folder remains the working copy and pushes to the `main` branch.
+
+The repository is configured to deploy the production site to GitHub Pages whenever `main` is pushed. Local development continues to run from this folder with `pnpm dev`.
 
 **Same mind. New skills. Bigger possibilities.**
 
