@@ -6,8 +6,9 @@ import { currentJourneyLevel, journeyProgress, makeMissions, planJourney, XP_RUL
 import { createDjChallenge, djChallengeLevels, djChallengeMissions, djResourceUrl, DJ_CHALLENGE_ID, DJ_PERFORMANCE_DATES, formatMissionDate, upgradeDjChallenge, type DjPerformanceDate } from './lib/djChallenge'
 import { loadJourneys, saveJourneys } from './lib/store'
 import Portal from './Portal'
+import MainAccess from './MainAccess'
 
-type View = 'landing' | 'create' | 'plan' | 'dashboard' | 'public' | 'challenge' | 'portal'
+type View = 'landing' | 'create' | 'plan' | 'dashboard' | 'public' | 'challenge' | 'portal' | 'access'
 const emptyInput: JourneyInput = { goal: '', startingPoint: '', hero: '', commitment: '', deadline: '', resources: '' }
 
 function Icon({ name }: { name: 'arrow' | 'spark' | 'check' | 'wallet' | 'proof' | 'share' }) {
@@ -34,6 +35,7 @@ function App() {
   const [levels, setLevels] = useState<JourneyLevel[]>([])
   const [wallet, setWallet] = useState<WalletState>({ status: 'idle' })
   const [toast, setToast] = useState('')
+  const [yourShotApproved, setYourShotApproved] = useState(false)
 
   const active = journeys.find((journey) => journey.id === activeId) ?? journeys[0]
   useEffect(() => saveJourneys(journeys), [journeys])
@@ -48,6 +50,7 @@ function App() {
       else if (hash === 'app') setView('dashboard')
       else if (hash === 'challenge') setView('challenge')
       else if (hash === 'portal') setView('portal')
+      else if (hash === 'login') setView('access')
       else setView('landing')
     }
     route(); addEventListener('hashchange', route); return () => removeEventListener('hashchange', route)
@@ -73,18 +76,19 @@ function App() {
     setJourneys((all) => [challenge, ...all]); setActiveId(challenge.id); setView('dashboard'); location.hash = 'app'; scrollTo(0, 0)
   }
 
-  if (view === 'portal') return <Portal back={() => { location.hash = 'challenge'; setView('challenge') }} />
+  if (view === 'portal') return <Portal back={() => { location.hash = ''; setView('landing') }} openCourse={() => { setYourShotApproved(true); location.hash = 'challenge'; setView('challenge') }} />
+  if (view === 'access') return <MainAccess back={() => { location.hash = ''; setView('landing') }} startJourney={start} continueJourney={active ? () => openExisting(active.id) : undefined} />
 
   return <div className="app-shell">
     <div className="ambient ambient-a" /><div className="ambient ambient-b" />
-    <header className="topbar"><Brand /><nav><button className="nav-link" onClick={previewChallenge}>DJ use case</button>{view === 'challenge' && <button className="nav-link" onClick={() => { location.hash = 'portal'; setView('portal') }}>Class portal</button>}{active && <button className="nav-link" onClick={() => openExisting(active.id)}>My journey</button>}<WalletButton wallet={wallet} connect={connect} /></nav></header>
+    <header className="topbar"><Brand /><nav><button className="nav-link" onClick={() => { location.hash = 'portal'; setView('portal') }}>Your Shot portal</button><button className="nav-link" onClick={() => { location.hash = 'login'; setView('access') }}>Log in / Sign up</button>{active && <button className="nav-link" onClick={() => openExisting(active.id)}>My journey</button>}<WalletButton wallet={wallet} connect={connect} /></nav></header>
     <main>
-      {view === 'landing' && <Landing start={start} challenge={previewChallenge} active={active} openExisting={openExisting} />}
-      {view === 'challenge' && <ChallengePreview begin={beginChallenge} alreadyStarted={journeys.some((journey) => journey.templateId === DJ_CHALLENGE_ID)} />}
+      {view === 'landing' && <Landing start={start} challenge={previewChallenge} portal={() => { location.hash = 'portal'; setView('portal') }} active={active} openExisting={openExisting} />}
+      {view === 'challenge' && <ChallengePreview begin={beginChallenge} alreadyStarted={journeys.some((journey) => journey.templateId === DJ_CHALLENGE_ID)} approved={yourShotApproved} openPortal={() => { location.hash = 'portal'; setView('portal') }} />}
       {view === 'create' && <JourneyForm input={input} setInput={setInput} submit={propose} />}
       {view === 'plan' && <Plan input={input} levels={levels} setLevels={setLevels} approve={approve} back={() => setView('create')} />}
       {view === 'dashboard' && active && <Dashboard journey={active} update={updateJourney} wallet={wallet} connect={connect} publicView={() => { location.hash = `journey/${active.id}`; setView('public') }} notify={setToast} />}
-      {view === 'dashboard' && !active && <Landing start={start} challenge={previewChallenge} active={active} openExisting={openExisting} />}
+      {view === 'dashboard' && !active && <Landing start={start} challenge={previewChallenge} portal={() => { location.hash = 'portal'; setView('portal') }} active={active} openExisting={openExisting} />}
       {view === 'public' && active && <PublicJourney journey={active} start={start} notify={setToast} />}
     </main>
     {toast && <div className="toast" role="status">{toast}</div>}
@@ -102,7 +106,7 @@ function DjBadge() {
   return <span className="dj-badge" aria-label="Your Shot DJ Journey"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 17a10 10 0 0 1 20 0M6 17v8h5v-8H6Zm15 0v8h5v-8h-5Z" /><path d="M12 27c2 2 6 2 8 0" /></svg><span>YOUR SHOT · DJ</span></span>
 }
 
-function Landing({ start, challenge, active, openExisting }: { start: () => void; challenge: () => void; active?: Journey; openExisting: (id: string) => void }) {
+function Landing({ start, challenge, portal, active, openExisting }: { start: () => void; challenge: () => void; portal: () => void; active?: Journey; openExisting: (id: string) => void }) {
   return <>
     <section className="hero-section">
       <div className="eyebrow"><span /> REAL-WORLD PROGRESSION</div>
@@ -111,7 +115,7 @@ function Landing({ start, challenge, active, openExisting }: { start: () => void
       <div className="hero-actions"><button className="primary" onClick={start}>Start your journey <Icon name="arrow" /></button>{active && <button className="secondary" onClick={() => openExisting(active.id)}>Continue journey</button>}</div>
       <div className="microproof"><span className="faces">O <i>M</i> <b>J</b></span><strong>Proof over promises.</strong> Built for progress you can show.</div>
     </section>
-    <section className="challenge-feature"><div className="challenge-feature-inner"><DjBadge /><div><small>LIVE USE CASE · YOUR SHOT DJ</small><h2>One Journey.<br /><em>Endless possibilities.</em></h2><p>ZERO 2 HERO can guide any skill or goal. This 30-day DJ Journey is the current real-world example, built around the Your Shot competition and an October 24 or 25 performance.</p><button className="primary" onClick={challenge}>View the DJ example <Icon name="arrow" /></button></div><div className="challenge-count"><strong>30</strong><span>DAYS</span><small>One example Journey</small></div></div></section>
+    <section className="challenge-feature"><div className="challenge-feature-inner"><DjBadge /><div><small>LIVE USE CASE · YOUR SHOT DJ</small><h2>One Journey.<br /><em>Endless possibilities.</em></h2><p>Everyone can see the Your Shot entry point. Approved Your Shot members can open the private 30-day course, companion, recordings, and chat.</p><div className="hero-actions"><button className="primary" onClick={portal}>Enter Your Shot portal <Icon name="arrow" /></button><button className="secondary" onClick={challenge}>About the DJ Journey</button></div></div><div className="challenge-count"><strong>30</strong><span>DAYS</span><small>Approved course access</small></div></div></section>
     <section className="loop-section">
       <div className="section-head"><span>THE LOOP</span><h2>Your ambition becomes<br /><em>the next clear move.</em></h2></div>
       <div className="loop-grid">
@@ -125,11 +129,11 @@ function Landing({ start, challenge, active, openExisting }: { start: () => void
   </>
 }
 
-function ChallengePreview({ begin, alreadyStarted }: { begin: (date: DjPerformanceDate) => void; alreadyStarted: boolean }) {
+function ChallengePreview({ begin, alreadyStarted, approved, openPortal }: { begin: (date: DjPerformanceDate) => void; alreadyStarted: boolean; approved: boolean; openPortal: () => void }) {
   const [performanceDate, setPerformanceDate] = useState<DjPerformanceDate>(DJ_PERFORMANCE_DATES[0])
   const missions = djChallengeMissions(performanceDate)
   const leadUp = missions.filter((mission) => mission.phase === 'lead-up')
-  return <section className="challenge-page"><div className="challenge-intro"><DjBadge /><div className="eyebrow"><span /> START SEPTEMBER 22, 2026</div><h1>Your road to<br /><em>Your Shot.</em></h1><p>Choose your performance date. The website maps a Your Shot-based Mission to every day: a short lead-up, then the complete 30-day challenge ending on show day.</p><div className="date-picker"><span>CHOOSE YOUR PERFORMANCE</span>{DJ_PERFORMANCE_DATES.map((date) => <button className={date === performanceDate ? 'selected' : ''} key={date} onClick={() => setPerformanceDate(date)}><b>OCT</b><strong>{date.slice(-2)}</strong><small>{new Intl.DateTimeFormat('en-US', { weekday: 'long', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`))}</small></button>)}</div><button className="primary" onClick={() => begin(performanceDate)}>{alreadyStarted ? 'Use this date and continue' : 'Start the DJ challenge'} <Icon name="arrow" /></button><div className="challenge-principles"><span>{leadUp.length} lead-up Missions</span><span>30 challenge days</span><span>Performance-day Boss Mission</span></div></div><div className="leadup-card"><div><small>LEAD-UP · SEPTEMBER 22</small><h2>Get ready before Day 1.</h2></div>{leadUp.map((mission) => <div className="challenge-day" key={mission.id}><span><b>{mission.scheduledDate && formatMissionDate(mission.scheduledDate)}</b>LEAD-UP</span><strong>{mission.title}</strong></div>)}</div><div className="challenge-levels">{djChallengeLevels.map((level, index) => <article key={level.id}><div className="challenge-level-heading"><b>LEVEL {index + 1}</b><h2>{level.name}</h2><p>{level.description}</p></div><div>{missions.filter((mission) => mission.phase === 'challenge' && mission.levelId === level.id).map((mission) => <div className="challenge-day" key={mission.id}><span><b>DAY {String(mission.day).padStart(2, '0')}</b>{mission.scheduledDate && formatMissionDate(mission.scheduledDate)}</span><strong>{mission.title}</strong>{mission.type === 'BOSS' && <b>RECORD</b>}</div>)}</div></article>)}</div><p className="challenge-source">The 30 challenge Missions follow the Your Shot course sequence reviewed in the earlier course-research chat. Tutorial links open topic-specific YouTube searches.</p></section>
+  return <section className="challenge-page"><div className="challenge-intro"><DjBadge /><div className="eyebrow"><span /> START SEPTEMBER 22, 2026</div><h1>Your road to<br /><em>Your Shot.</em></h1><p>The public page introduces the 30-day Journey. The daily course, companion tools, recording feed, and chat are reserved for approved Your Shot accounts.</p>{approved ? <><div className="date-picker"><span>CHOOSE YOUR PERFORMANCE</span>{DJ_PERFORMANCE_DATES.map((date) => <button className={date === performanceDate ? 'selected' : ''} key={date} onClick={() => setPerformanceDate(date)}><b>OCT</b><strong>{date.slice(-2)}</strong><small>{new Intl.DateTimeFormat('en-US', { weekday: 'long', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`))}</small></button>)}</div><button className="primary" onClick={() => begin(performanceDate)}>{alreadyStarted ? 'Use this date and continue' : 'Start the DJ challenge'} <Icon name="arrow" /></button></> : <button className="primary" onClick={openPortal}>Log in or request Your Shot access <Icon name="arrow" /></button>}<div className="challenge-principles"><span>{leadUp.length} lead-up Missions</span><span>30 challenge days</span><span>Performance-day Boss Mission</span></div></div>{approved && <><div className="leadup-card"><div><small>LEAD-UP · SEPTEMBER 22</small><h2>Get ready before Day 1.</h2></div>{leadUp.map((mission) => <div className="challenge-day" key={mission.id}><span><b>{mission.scheduledDate && formatMissionDate(mission.scheduledDate)}</b>LEAD-UP</span><strong>{mission.title}</strong></div>)}</div><div className="challenge-levels">{djChallengeLevels.map((level, index) => <article key={level.id}><div className="challenge-level-heading"><b>LEVEL {index + 1}</b><h2>{level.name}</h2><p>{level.description}</p></div><div>{missions.filter((mission) => mission.phase === 'challenge' && mission.levelId === level.id).map((mission) => <div className="challenge-day" key={mission.id}><span><b>DAY {String(mission.day).padStart(2, '0')}</b>{mission.scheduledDate && formatMissionDate(mission.scheduledDate)}</span><strong>{mission.title}</strong>{mission.type === 'BOSS' && <b>RECORD</b>}</div>)}</div></article>)}</div><p className="challenge-source">The 30 challenge Missions follow the Your Shot course sequence reviewed in the earlier course-research chat. Tutorial links open topic-specific YouTube searches.</p></>}</section>
 }
 
 function JourneyForm({ input, setInput, submit }: { input: JourneyInput; setInput: (value: JourneyInput) => void; submit: (event: FormEvent) => void }) {

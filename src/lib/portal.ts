@@ -1,5 +1,6 @@
 export type PortalRole = 'founder' | 'user'
 export type AccountStatus = 'approved' | 'pending'
+export type AccountProgram = 'zero2hero' | 'your-shot'
 
 export interface PortalAccount {
   id: string
@@ -9,6 +10,7 @@ export interface PortalAccount {
   mustChangePassword: boolean
   securityPin?: string
   completedCompanionLessons?: string[]
+  program: AccountProgram
   role: PortalRole
   status: AccountStatus
   agreedToPositivity: boolean
@@ -60,8 +62,8 @@ export interface PortalState {
 export const POSITIVITY_CLAUSE = 'I will keep feedback specific, constructive, and encouraging. I will critique the mix, never the person, and I will not post harassment, hate, or personal attacks.'
 
 export const SEEDED_ACCOUNTS: PortalAccount[] = [
-  { id: 'founder-onna', username: 'Onna', displayName: 'Onna', password: 'Onna0205', mustChangePassword: false, securityPin: '0205', role: 'founder', status: 'approved', agreedToPositivity: true, createdAt: '2026-09-22T00:00:00.000Z' },
-  { id: 'user-djlucidsync', username: 'DJLucidSync', displayName: 'DJLucidSync', password: 'DJLucidSync0205', mustChangePassword: true, role: 'user', status: 'approved', agreedToPositivity: true, createdAt: '2026-09-22T00:00:00.000Z' },
+  { id: 'founder-onna', username: 'Onna', displayName: 'Onna', password: 'BuckNasty', mustChangePassword: false, securityPin: '0205', program: 'zero2hero', role: 'founder', status: 'approved', agreedToPositivity: true, createdAt: '2026-09-22T00:00:00.000Z' },
+  { id: 'user-djlucidsync', username: 'DJLucidSync', displayName: 'DJLucidSync', password: 'BuckNasty', mustChangePassword: false, securityPin: '0205', program: 'your-shot', role: 'user', status: 'approved', agreedToPositivity: true, createdAt: '2026-09-22T00:00:00.000Z' },
 ]
 
 const KEY = 'zero2hero.dj-portal.v1'
@@ -78,9 +80,9 @@ export function loadPortalState(): PortalState {
     const accountMap = new Map(parsed.accounts.map((account) => [account.id, account]))
     SEEDED_ACCOUNTS.forEach((account) => { if (!accountMap.has(account.id)) parsed.accounts.unshift({ ...account }) })
     parsed.accounts = parsed.accounts.map((account) => {
-      if (account.id === 'founder-onna' && account.password === 'FoundingHero!') return { ...account, password: defaultPassword(account.username), mustChangePassword: false, securityPin: '0205' }
-      if (account.id === 'user-djlucidsync' && account.password === 'LucidHero!') return { ...account, password: defaultPassword(account.username), mustChangePassword: true }
-      return { ...account, mustChangePassword: account.mustChangePassword ?? false, completedCompanionLessons: account.completedCompanionLessons ?? [] }
+      const seeded = SEEDED_ACCOUNTS.find((item) => item.id === account.id)
+      if (seeded) return { ...account, ...seeded, completedCompanionLessons: account.completedCompanionLessons ?? [] }
+      return { ...account, program: account.program ?? 'your-shot', mustChangePassword: account.mustChangePassword ?? false, completedCompanionLessons: account.completedCompanionLessons ?? [] }
     })
     return { ...parsed, resetRequests: parsed.resetRequests ?? [] }
   } catch {
@@ -92,8 +94,8 @@ export function savePortalState(state: PortalState) {
   localStorage.setItem(KEY, JSON.stringify(state))
 }
 
-export function authenticate(accounts: PortalAccount[], username: string, password: string) {
-  return accounts.find((account) => account.username.toLowerCase() === username.trim().toLowerCase() && account.password === password && account.status === 'approved')
+export function authenticate(accounts: PortalAccount[], username: string, password: string, program?: AccountProgram) {
+  return accounts.find((account) => account.username.toLowerCase() === username.trim().toLowerCase() && account.password === password && account.status === 'approved' && (!program || account.role === 'founder' || account.program === program))
 }
 
 export function isPositiveEnough(text: string) {

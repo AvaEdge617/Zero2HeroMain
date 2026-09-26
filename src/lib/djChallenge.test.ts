@@ -34,4 +34,9 @@ describe('30-day DJ challenge', () => {
     expect(updated.missions.find((mission) => mission.id === 'dj-day-1')?.completed).toBe(true)
     expect(updated.missions.at(-1)?.scheduledDate).toBe('2026-10-25')
   })
+
+  it('uses the selected performance date in the lead-up instructions', () => {
+    expect(djChallengeMissions('2026-10-24')[0].description).toContain('Oct 24, 2026')
+    expect(djChallengeMissions('2026-10-25')[0].description).toContain('Oct 25, 2026')
+  })
 })

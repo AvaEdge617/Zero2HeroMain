@@ -4,13 +4,14 @@ import { authenticate, defaultPassword, defaultPortalState, isPositiveEnough, pi
 describe('DJ portal', () => {
   it('seeds approved founder and user accounts', () => {
     const state = defaultPortalState()
-    expect(authenticate(state.accounts, 'Onna', 'Onna0205')?.role).toBe('founder')
-    expect(authenticate(state.accounts, 'DJLucidSync', 'DJLucidSync0205')?.role).toBe('user')
+    expect(authenticate(state.accounts, 'Onna', 'BuckNasty', 'zero2hero')?.role).toBe('founder')
+    expect(authenticate(state.accounts, 'DJLucidSync', 'BuckNasty', 'your-shot')?.role).toBe('user')
+    expect(authenticate(state.accounts, 'DJLucidSync', 'BuckNasty', 'zero2hero')).toBeUndefined()
   })
 
   it('does not authenticate pending accounts', () => {
     const state = defaultPortalState()
-    state.accounts.push({ id: 'pending', username: 'NewDJ', displayName: 'New DJ', password: 'test', mustChangePassword: true, role: 'user', status: 'pending', agreedToPositivity: true, createdAt: new Date().toISOString() })
+    state.accounts.push({ id: 'pending', username: 'NewDJ', displayName: 'New DJ', password: 'test', mustChangePassword: true, program: 'your-shot', role: 'user', status: 'pending', agreedToPositivity: true, createdAt: new Date().toISOString() })
     expect(authenticate(state.accounts, 'NewDJ', 'test')).toBeUndefined()
   })
 

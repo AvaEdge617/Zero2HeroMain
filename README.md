@@ -23,7 +23,9 @@ This repository contains the competition MVP for the Nimiq Mini Apps Competition
 - Shareable public Journey page
 - Seed-friendly `ZERO → DJ` planning based on a real five-week live-performance goal
 - Optional Your Shot DJ starter Journey beginning September 22, with lead-up Missions, 30 course-based daily Missions, an October 24/25 performance selector, recording checkpoints, and topic-specific tutorial searches
-- Local DJ portal demo with seeded Founder/User accounts, Founder-approved signups, forced first-login password/PIN setup, PIN-checked reset requests, member removal, audio recording uploads, likes, comments, and one public live-chat room
+- Separate local ZERO 2 HERO and Your Shot signups with Founder approval queues. Your Shot course, companion, recording feed, and chat require an approved Your Shot account.
+- Typed login for the seeded Founder and DJ member accounts; there are no one-click demo-account controls.
+- Local DJ portal prototype with forced first-login password/PIN setup for newly approved members, PIN-checked reset requests, member removal, audio recording uploads, likes, comments, and one public live-chat room
 - The DJ Companion is contained inside the class portal with Prepare, Listen, Mix, and Perform practice cards, timers, a compact lesson coach, and a controller-setup checklist. It is an optional class add-on rather than a second Zero 2 Hero application.
 - Official `@nimiq/mini-app-sdk` boundary for account connection inside Nimiq Pay
 - Honest disconnected-browser state and planned NIM commitment history
@@ -73,7 +75,7 @@ No environment variables or secrets are required for this MVP.
 
 - Journeys and proof metadata are stored only in the current browser.
 - DJ portal accounts, passwords, approvals, recordings, comments, likes, and chat are local demo data. Production requires authenticated hosted accounts, password hashing, moderation controls, database storage, realtime delivery, and durable audio storage.
-- Demo temporary passwords follow `username0205`. Passwords and PINs are intentionally browser-local prototype data; do not reuse real credentials until a secure backend and password hashing are implemented.
+- Newly approved account temporary passwords follow `username0205`. Passwords and PINs are intentionally browser-local prototype data; do not reuse real credentials until a secure backend and password hashing are implemented.
 - Local audio uploads are limited to 3 MB because the demo stores them in browser storage. RekordBridge currently points to a clearly labeled placeholder until its file is hosted.
 - Uploaded files are represented by local filename metadata; production needs durable object storage and upload authorization.
 - The 30-day challenge is a reusable starter plan based on the accessible Your Shot course outline and resource topics; it is not official course content or a replacement for the lessons. Recording files are not persisted by this MVP.

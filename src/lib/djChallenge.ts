@@ -26,7 +26,7 @@ export const djChallengeLevels: JourneyLevel[] = [
 type Day = [string, string, string, MissionType?, ProofType?]
 
 const leadUpDays: Day[] = [
-  ['Confirm your show target', 'Write down the October 30 performance date, your assigned set length, and the kind of energy you want the room to feel.', 'how to set goals for first DJ performance'],
+  ['Confirm your show target', 'Write down your selected performance date, assigned set length, and the kind of energy you want the room to feel.', 'how to set goals for first DJ performance'],
   ['Audit your DJ setup', 'List the controller or decks, laptop, headphones, cables, Rekordbox access, and USB drives you have. Flag anything you need to borrow or replace.', 'beginner DJ equipment checklist'],
   ['Map the Your Shot course', 'Review your Your Shot lesson schedule and add every class, coaching session, and practice window to your calendar.', 'DJ practice schedule beginner'],
   ['Choose your sound', 'Write a one-sentence direction for the set and select three reference mixes or artists that match it.', 'how to define your DJ style'],
@@ -94,7 +94,7 @@ export function djChallengeMissions(performanceDate: DjPerformanceDate = DJ_PERF
     scheduledDate: dateFrom(DJ_LEAD_UP_START, index),
     type: type ?? 'PRACTICE',
     title,
-    description,
+    description: index === 0 ? `Write down the ${formatMissionDate(performanceDate)}, 2026 performance date, your assigned set length, and the kind of energy you want the room to feel.` : description,
     resourceQuery,
     xp: type === 'BOSS' ? 100 : 50,
     proofRequired: proofRequired ?? 'basic',
