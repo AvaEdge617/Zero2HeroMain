@@ -6,6 +6,8 @@ GitHub owner for this project: **avaedge617**. The local workspace is prepared f
 
 Zero 2 Hero turns a capability or outcome into a visible real-world progression path. A user establishes their **Zero**, defines their own **Hero**, reviews an attainable path, completes Missions, submits Proof of Work, and earns Journey-specific XP.
 
+The product supports any real-world skill or goal. The Your Shot DJ Journey and companion portal are a linked use case based on the founder's current competition, not the definition or limit of ZERO 2 HERO.
+
 This repository contains the competition MVP for the Nimiq Mini Apps Competition. It prioritizes one complete vertical slice over the full long-term product.
 
 ## Current MVP

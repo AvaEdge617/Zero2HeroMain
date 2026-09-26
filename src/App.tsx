@@ -77,7 +77,7 @@ function App() {
 
   return <div className="app-shell">
     <div className="ambient ambient-a" /><div className="ambient ambient-b" />
-    <header className="topbar"><Brand /><nav><button className="nav-link" onClick={() => { location.hash = 'portal'; setView('portal') }}>DJ portal</button>{active && <button className="nav-link" onClick={() => openExisting(active.id)}>My journey</button>}<WalletButton wallet={wallet} connect={connect} /></nav></header>
+    <header className="topbar"><Brand /><nav><button className="nav-link" onClick={previewChallenge}>DJ use case</button>{view === 'challenge' && <button className="nav-link" onClick={() => { location.hash = 'portal'; setView('portal') }}>Class portal</button>}{active && <button className="nav-link" onClick={() => openExisting(active.id)}>My journey</button>}<WalletButton wallet={wallet} connect={connect} /></nav></header>
     <main>
       {view === 'landing' && <Landing start={start} challenge={previewChallenge} active={active} openExisting={openExisting} />}
       {view === 'challenge' && <ChallengePreview begin={beginChallenge} alreadyStarted={journeys.some((journey) => journey.templateId === DJ_CHALLENGE_ID)} />}
@@ -111,7 +111,7 @@ function Landing({ start, challenge, active, openExisting }: { start: () => void
       <div className="hero-actions"><button className="primary" onClick={start}>Start your journey <Icon name="arrow" /></button>{active && <button className="secondary" onClick={() => openExisting(active.id)}>Continue journey</button>}</div>
       <div className="microproof"><span className="faces">O <i>M</i> <b>J</b></span><strong>Proof over promises.</strong> Built for progress you can show.</div>
     </section>
-    <section className="challenge-feature"><div className="challenge-feature-inner"><DjBadge /><div><small>STARTS SEPTEMBER 22</small><h2>30 days. One set.<br /><em>Your show date.</em></h2><p>Begin with lead-up Missions, follow the course-aligned daily challenge, and perform at Your Shot on October 24 or 25.</p><button className="primary" onClick={challenge}>Explore the challenge <Icon name="arrow" /></button></div><div className="challenge-count"><strong>30</strong><span>DAYS</span><small>Plus dated lead-up Missions</small></div></div></section>
+    <section className="challenge-feature"><div className="challenge-feature-inner"><DjBadge /><div><small>LIVE USE CASE · YOUR SHOT DJ</small><h2>One Journey.<br /><em>Endless possibilities.</em></h2><p>ZERO 2 HERO can guide any skill or goal. This 30-day DJ Journey is the current real-world example, built around the Your Shot competition and an October 24 or 25 performance.</p><button className="primary" onClick={challenge}>View the DJ example <Icon name="arrow" /></button></div><div className="challenge-count"><strong>30</strong><span>DAYS</span><small>One example Journey</small></div></div></section>
     <section className="loop-section">
       <div className="section-head"><span>THE LOOP</span><h2>Your ambition becomes<br /><em>the next clear move.</em></h2></div>
       <div className="loop-grid">

@@ -1,5 +1,7 @@
 # Zero 2 Hero engineering instructions
 
+The official user-facing product name is always **ZERO 2 HERO**. Treat “02,” “Z2H,” and similar forms as conversational shorthand only. Do not publish “Zero to Hero,” “0→H,” or another variant as the brand name.
+
 ## Product truth
 
 Zero 2 Hero is a real-world skill and goal progression platform. It is not specifically a DJ app, ADHD app, habit tracker, crypto app, or AI business app.
