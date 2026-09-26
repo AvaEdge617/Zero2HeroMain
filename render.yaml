@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: zero2hero-auth-avaedge617
+    runtime: node
+    plan: free
+    region: oregon
+    autoDeploy: true
+    buildCommand: pnpm install --frozen-lockfile
+    startCommand: pnpm server
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: zero2hero-auth-db-live
+          property: connectionString
+      - key: ALLOWED_ORIGINS
+        value: https://avaedge617.github.io,http://localhost:5173,http://localhost:5174
+      - key: FOUNDER_USERNAME
+        value: Onna
+      - key: DJ_USERNAME
+        value: DJLucidSync
+      - key: FOUNDER_PASSWORD
+        sync: false
+      - key: DJ_PASSWORD
+        sync: false
+      - key: SEED_SECURITY_PIN
+        sync: false
+
+databases:
+  - name: zero2hero-auth-db-live
+    databaseName: zero2hero_auth
+    plan: free
+    region: oregon
+    postgresMajorVersion: "16"

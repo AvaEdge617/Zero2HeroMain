@@ -2,7 +2,7 @@
 
 GitHub repository: **[AvaEdge617/Zero2HeroMain](https://github.com/AvaEdge617/Zero2HeroMain)**. The local folder remains the working copy and pushes to the `main` branch.
 
-The repository is configured to deploy the production site to GitHub Pages whenever `main` is pushed. Local development continues to run from this folder with `pnpm dev`.
+The repository deploys the frontend to GitHub Pages whenever `main` is pushed. A Render web service and PostgreSQL database provide authentication through `render.yaml`. Local development continues to run from this folder with `pnpm dev` and `pnpm server`.
 
 **Same mind. New skills. Bigger possibilities.**
 
@@ -25,9 +25,10 @@ This repository contains the competition MVP for the Nimiq Mini Apps Competition
 - Shareable public Journey page
 - Seed-friendly `ZERO → DJ` planning based on a real five-week live-performance goal
 - Optional Your Shot DJ starter Journey beginning September 22, with lead-up Missions, 30 course-based daily Missions, an October 24/25 performance selector, recording checkpoints, and topic-specific tutorial searches
-- Separate local ZERO 2 HERO and Your Shot signups with Founder approval queues. Your Shot course, companion, recording feed, and chat require an approved Your Shot account.
-- Typed login for the seeded Founder and DJ member accounts; there are no one-click demo-account controls.
-- Local DJ portal prototype with forced first-login password/PIN setup for newly approved members, PIN-checked reset requests, member removal, audio recording uploads, likes, comments, and one public live-chat room
+- Server-backed ZERO 2 HERO and Your Shot signups with separate Founder approval queues. Your Shot course, companion, recording feed, and chat require an approved server session.
+- Passwords and security PINs are bcrypt-hashed in PostgreSQL. Login sessions use random, hashed server-side tokens delivered through Secure, HttpOnly cookies.
+- Login rate limiting, strict input validation, origin checks, restricted CORS, Helmet security headers, generic reset responses, and server-authorized Founder actions.
+- Forced first-login password/PIN setup for newly approved members, PIN-checked reset requests, member removal, audio recording uploads, likes, comments, and one public live-chat room.
 - The DJ Companion is contained inside the class portal with Prepare, Listen, Mix, and Perform practice cards, timers, a compact lesson coach, and a controller-setup checklist. It is an optional class add-on rather than a second Zero 2 Hero application.
 - Official `@nimiq/mini-app-sdk` boundary for account connection inside Nimiq Pay
 - Honest disconnected-browser state and planned NIM commitment history
@@ -76,8 +77,8 @@ No environment variables or secrets are required for this MVP.
 ## Known limitations
 
 - Journeys and proof metadata are stored only in the current browser.
-- DJ portal accounts, passwords, approvals, recordings, comments, likes, and chat are local demo data. Production requires authenticated hosted accounts, password hashing, moderation controls, database storage, realtime delivery, and durable audio storage.
-- Newly approved account temporary passwords follow `username0205`. Passwords and PINs are intentionally browser-local prototype data; do not reuse real credentials until a secure backend and password hashing are implemented.
+- Accounts, password hashes, sessions, approvals, and reset requests use the hosted PostgreSQL backend. Recordings, comments, likes, companion completion, and chat remain browser-local until durable authenticated storage is added.
+- Newly approved account temporary passwords follow `username0205` and must be changed at first login. Seed account passwords come only from Render secrets and are never stored in the frontend or repository.
 - Local audio uploads are limited to 3 MB because the demo stores them in browser storage. RekordBridge currently points to a clearly labeled placeholder until its file is hosted.
 - Uploaded files are represented by local filename metadata; production needs durable object storage and upload authorization.
 - The 30-day challenge is a reusable starter plan based on the accessible Your Shot course outline and resource topics; it is not official course content or a replacement for the lessons. Recording files are not persisted by this MVP.

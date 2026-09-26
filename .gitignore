@@ -1,5 +1,7 @@
 node_modules
 .pnpm-store
+server/.env
+server/.env.*.local
 dist
 .env
 .env.local

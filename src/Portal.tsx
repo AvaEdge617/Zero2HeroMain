@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { authenticate, defaultPassword, isPositiveEnough, loadPortalState, pinPasses, POSITIVITY_CLAUSE, savePortalState, type AudioPost, type PortalAccount, type PortalState } from './lib/portal'
+import { defaultPassword, isPositiveEnough, loadPortalState, POSITIVITY_CLAUSE, savePortalState, type AudioPost, type PasswordResetRequest, type PortalAccount, type PortalState } from './lib/portal'
+import { authApi } from './lib/authApi'
 
 type PortalPage = 'companion' | 'feed' | 'chat' | 'members'
 
@@ -9,25 +10,30 @@ export default function Portal({ back, openCourse }: { back: () => void; openCou
   const [accountId, setAccountId] = useState<string | null>(null)
   const [page, setPage] = useState<PortalPage>('companion')
   const [notice, setNotice] = useState('')
+  const [loading, setLoading] = useState(true)
   const account = state.accounts.find((item) => item.id === accountId)
   useEffect(() => savePortalState(state), [state])
+  useEffect(() => { authApi.session().then(({ account: sessionAccount }) => { if (sessionAccount && (sessionAccount.role === 'founder' || sessionAccount.program === 'your-shot')) { setState((current) => ({ ...current, accounts: [sessionAccount] })); setAccountId(sessionAccount.id) } }).finally(() => setLoading(false)) }, [])
   useEffect(() => { if (!notice) return; const timer = setTimeout(() => setNotice(''), 2800); return () => clearTimeout(timer) }, [notice])
 
-  if (!account) return <PortalLogin state={state} setState={setState} login={setAccountId} back={back} />
-  if (account.mustChangePassword) return <FirstLoginSetup account={account} finish={(password, pin) => setState({ ...state, accounts: state.accounts.map((item) => item.id === account.id ? { ...item, password, securityPin: pin, mustChangePassword: false } : item) })} logout={() => setAccountId(null)} />
+  const login = (next: PortalAccount) => { setState((current) => ({ ...current, accounts: [next] })); setAccountId(next.id) }
+  const logout = async () => { await authApi.logout().catch(() => undefined); setAccountId(null); setState((current) => ({ ...current, accounts: [] })) }
+  if (loading) return <section className="security-setup"><p>Checking secure access…</p></section>
+  if (!account) return <PortalLogin login={login} back={back} />
+  if (account.mustChangePassword) return <FirstLoginSetup account={account} finish={async (password, pin) => { await authApi.finishFirstLogin(password, pin); setState({ ...state, accounts: state.accounts.map((item) => item.id === account.id ? { ...item, mustChangePassword: false } : item) }) }} logout={logout} />
   return <section className="portal-shell">
-    <header className="portal-head"><button className="portal-wordmark" onClick={back}><span>ZERO 2 HERO</span><b>YOUR SHOT PORTAL</b></button><nav><button onClick={openCourse}>30-day course</button><button className={page === 'companion' ? 'active' : ''} onClick={() => setPage('companion')}>Class companion</button><button className={page === 'feed' ? 'active' : ''} onClick={() => setPage('feed')}>Recording feed</button><button className={page === 'chat' ? 'active' : ''} onClick={() => setPage('chat')}>Live chat</button>{account.role === 'founder' && <button className={page === 'members' ? 'active' : ''} onClick={() => setPage('members')}>Founder <i>{state.accounts.filter((item) => item.status === 'pending').length + state.resetRequests.filter((item) => item.status === 'pending').length}</i></button>}</nav><div className="portal-profile"><span>{account.displayName.slice(0, 2).toUpperCase()}</span><div><b>{account.displayName}</b><small>{account.role}</small></div><button onClick={() => setAccountId(null)}>Log out</button></div></header>
+    <header className="portal-head"><button className="portal-wordmark" onClick={back}><span>ZERO 2 HERO</span><b>YOUR SHOT PORTAL</b></button><nav><button onClick={openCourse}>30-day course</button><button className={page === 'companion' ? 'active' : ''} onClick={() => setPage('companion')}>Class companion</button><button className={page === 'feed' ? 'active' : ''} onClick={() => setPage('feed')}>Recording feed</button><button className={page === 'chat' ? 'active' : ''} onClick={() => setPage('chat')}>Live chat</button>{account.role === 'founder' && <button className={page === 'members' ? 'active' : ''} onClick={() => setPage('members')}>Founder</button>}</nav><div className="portal-profile"><span>{account.displayName.slice(0, 2).toUpperCase()}</span><div><b>{account.displayName}</b><small>{account.role}</small></div><button onClick={logout}>Log out</button></div></header>
     <main className="portal-main">
       {page === 'companion' && <ClassCompanion account={account} state={state} setState={setState} notify={setNotice} />}
       {page === 'feed' && <RecordingFeed state={state} setState={setState} account={account} notify={setNotice} />}
       {page === 'chat' && <LiveChat state={state} setState={setState} account={account} notify={setNotice} />}
-      {page === 'members' && account.role === 'founder' && <MemberApprovals state={state} setState={setState} currentAccount={account} />}
+      {page === 'members' && account.role === 'founder' && <MemberApprovals currentAccount={account} />}
     </main>
     {notice && <div className="toast">{notice}</div>}
   </section>
 }
 
-function PortalLogin({ state, setState, login, back }: { state: PortalState; setState: (state: PortalState) => void; login: (id: string) => void; back: () => void }) {
+function PortalLogin({ login, back }: { login: (account: PortalAccount) => void; back: () => void }) {
   const [mode, setMode] = useState<'login' | 'signup' | 'reset'>('login')
   const [username, setUsername] = useState('')
   const [displayName, setDisplayName] = useState('')
@@ -35,38 +41,25 @@ function PortalLogin({ state, setState, login, back }: { state: PortalState; set
   const [pin, setPin] = useState('')
   const [agreed, setAgreed] = useState(false)
   const [message, setMessage] = useState('')
-  const submit = (event: FormEvent) => {
+  const submit = async (event: FormEvent) => {
     event.preventDefault(); setMessage('')
-    if (mode === 'login') {
-      const account = authenticate(state.accounts, username, password, 'your-shot')
-      if (account) login(account.id)
-      else setMessage(state.accounts.some((item) => item.username.toLowerCase() === username.toLowerCase() && item.status === 'pending') ? 'Your signup is waiting for Founder approval.' : 'That login did not match an approved account.')
-      return
-    }
-    if (mode === 'reset') {
-      const account = state.accounts.find((item) => item.username.toLowerCase() === username.trim().toLowerCase() && item.status === 'approved' && (item.role === 'founder' || item.program === 'your-shot'))
-      if (!account) { setMessage('No approved account matches that username.'); return }
-      if (state.resetRequests.some((request) => request.accountId === account.id && request.status === 'pending')) { setMessage('A reset request is already waiting for Founder review.'); return }
-      const passed = pinPasses(account, pin)
-      setState({ ...state, resetRequests: [...state.resetRequests, { id: crypto.randomUUID(), accountId: account.id, username: account.username, pinPassed: passed, status: 'pending', createdAt: new Date().toISOString() }] })
-      setMode('login'); setPin(''); setMessage('Reset request sent. The Founder will see an automatic PIN pass/fail result.')
-      return
-    }
-    if (!agreed) { setMessage('Agree to the positivity clause to request access.'); return }
-    if (state.accounts.some((item) => item.username.toLowerCase() === username.trim().toLowerCase())) { setMessage('That username is already taken.'); return }
-    const next: PortalAccount = { id: crypto.randomUUID(), username: username.trim(), displayName: displayName.trim() || username.trim(), password: defaultPassword(username.trim()), mustChangePassword: true, program: 'your-shot', role: 'user', status: 'pending', agreedToPositivity: true, createdAt: new Date().toISOString() }
-    setState({ ...state, accounts: [...state.accounts, next] }); setMode('login'); setPassword(''); setMessage('Signup sent. A Founder must approve it before you can log in.')
+    try {
+      if (mode === 'login') { const result = await authApi.login(username, password, 'your-shot'); login(result.account); return }
+      if (mode === 'reset') { const result = await authApi.requestReset(username, pin, 'your-shot'); setMode('login'); setPin(''); setMessage(result.message); return }
+      if (!agreed) { setMessage('Agree to the positivity clause to request access.'); return }
+      await authApi.signup(displayName.trim() || username.trim(), username, 'your-shot', true); setMode('login'); setPassword(''); setMessage('Signup sent. A Founder must approve it before you can log in.')
+    } catch (error) { setMessage(error instanceof Error ? error.message : 'The request failed.') }
   }
   return <section className="portal-login"><button className="back-link" onClick={back}>← Back to ZERO 2 HERO</button><div className="portal-login-grid"><div className="portal-login-story"><span className="portal-chip">YOUR SHOT · ZERO 2 HERO</span><h1>Practice in public.<br /><em>Grow together.</em></h1><p>The link is public. The course, companion, recordings, and chat open only after a Founder approves a Your Shot account.</p><div className="positive-card"><b>THE POSITIVITY CLAUSE</b><p>{POSITIVITY_CLAUSE}</p></div><div className="rekord-card"><span>COMING SOON</span><h3>RekordBridge</h3><p>A future bridge for sharing prepared DJ library data and set workflows. The download link is a placeholder until the file is hosted.</p><button onClick={() => setMessage('RekordBridge download is coming soon. This is the temporary placeholder.')}>RekordBridge placeholder ↗</button></div></div><form className="portal-login-card" onSubmit={submit}><small>YOUR SHOT PORTAL</small><h2>{mode === 'login' ? 'Approved members.' : mode === 'signup' ? 'Request Your Shot access.' : 'Request a password reset.'}</h2>{mode === 'signup' && <label><span>Display name</span><input required value={displayName} onChange={(event) => setDisplayName(event.target.value)} /></label>}<label><span>Username</span><input required value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" /></label>{mode === 'login' && <label><span>Password</span><input required minLength={6} type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" /></label>}{mode === 'reset' && <label><span>Security PIN</span><input required inputMode="numeric" pattern="[0-9]{4,8}" type="password" value={pin} onChange={(event) => setPin(event.target.value)} placeholder="4–8 digits" /></label>}{mode === 'signup' && <><p className="default-password-note">After approval, your temporary password will be <b>{username || 'username'}0205</b>. You must replace it and create a security PIN at first login.</p><label className="agreement"><input type="checkbox" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} /><span>I agree to the positivity clause.</span></label></>}{message && <p className="form-message">{message}</p>}<button className="primary full" type="submit">{mode === 'login' ? 'Log in' : mode === 'signup' ? 'Send Your Shot request' : 'Send reset request'}</button><button className="text-button" type="button" onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setMessage('') }}>{mode === 'login' ? 'Request Your Shot access' : 'Back to login'}</button>{mode === 'login' && <button className="text-button" type="button" onClick={() => { setMode('reset'); setMessage('') }}>Forgot password? Request a reset</button>}</form></div></section>
 }
 
-export function FirstLoginSetup({ account, finish, logout }: { account: PortalAccount; finish: (password: string, pin: string) => void; logout: () => void }) {
+export function FirstLoginSetup({ account, finish, logout }: { account: PortalAccount; finish: (password: string, pin: string) => Promise<void>; logout: () => void | Promise<void> }) {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [pin, setPin] = useState('')
   const [pinConfirm, setPinConfirm] = useState('')
   const [message, setMessage] = useState('')
-  const submit = (event: FormEvent) => { event.preventDefault(); if (password.length < 8) { setMessage('Use at least 8 characters for your new password.'); return }; if (password === defaultPassword(account.username)) { setMessage('Choose a password different from the default.'); return }; if (password !== confirm) { setMessage('The passwords do not match.'); return }; if (!/^\d{4,8}$/.test(pin) || pin !== pinConfirm) { setMessage('Create a matching 4–8 digit security PIN.'); return }; finish(password, pin) }
+  const submit = async (event: FormEvent) => { event.preventDefault(); if (password.length < 12 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password)) { setMessage('Use 12+ characters with uppercase, lowercase, and a number.'); return }; if (password === defaultPassword(account.username)) { setMessage('Choose a password different from the temporary password.'); return }; if (password !== confirm) { setMessage('The passwords do not match.'); return }; if (!/^\d{4,8}$/.test(pin) || pin !== pinConfirm) { setMessage('Create a matching 4–8 digit security PIN.'); return }; try { await finish(password, pin) } catch (error) { setMessage(error instanceof Error ? error.message : 'Security setup failed.') } }
   return <section className="security-setup"><form className="portal-login-card" onSubmit={submit}><small>FIRST LOGIN SECURITY</small><h2>Protect your account.</h2><p>Your temporary password worked. Create a private password and PIN before entering the portal.</p><label><span>New password</span><input type="password" required value={password} onChange={(event) => setPassword(event.target.value)} /></label><label><span>Confirm password</span><input type="password" required value={confirm} onChange={(event) => setConfirm(event.target.value)} /></label><label><span>Security PIN</span><input type="password" inputMode="numeric" pattern="[0-9]{4,8}" required value={pin} onChange={(event) => setPin(event.target.value)} /></label><label><span>Confirm PIN</span><input type="password" inputMode="numeric" pattern="[0-9]{4,8}" required value={pinConfirm} onChange={(event) => setPinConfirm(event.target.value)} /></label><p className="security-note">Your PIN checks future reset requests. The Founder sees only PASS or FAIL.</p>{message && <p className="form-message">{message}</p>}<button className="primary full">Save security and enter</button><button type="button" className="text-button" onClick={logout}>Log out</button></form></section>
 }
 
@@ -133,15 +126,19 @@ function LiveChat({ state, setState, account, notify }: { state: PortalState; se
   return <section className="chat-page"><div className="portal-title"><div><small>PUBLIC ROOM</small><h1>Live chat</h1><p>One shared room for practice questions, set check-ins, and show-day support.</p></div></div><div className="chat-window"><div className="chat-messages">{state.chat.length ? state.chat.map((post) => <article key={post.id}><span>{post.author.slice(0, 2).toUpperCase()}</span><div><header><b>{post.author}</b><small>{new Date(post.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</small></header><p>{post.text}</p></div></article>) : <div className="chat-empty">The room is quiet. Say hello or share today’s practice goal.</div>}</div><div className="chat-compose"><input value={text} onChange={(event) => setText(event.target.value)} placeholder="Message the public room…" onKeyDown={(event) => { if (event.key === 'Enter') send() }} /><button className="primary" onClick={send}>Send</button></div><p>Public room only · Positivity clause applies · Messages update in this browser demo</p></div></section>
 }
 
-export function MemberApprovals({ state, setState, currentAccount }: { state: PortalState; setState: (state: PortalState) => void; currentAccount: PortalAccount }) {
-  const pending = state.accounts.filter((account) => account.status === 'pending')
+export function MemberApprovals({ currentAccount }: { currentAccount: PortalAccount }) {
+  const [accounts, setAccounts] = useState<PortalAccount[]>([])
+  const [resets, setResets] = useState<PasswordResetRequest[]>([])
+  const [message, setMessage] = useState('')
+  const load = async () => { try { const data = await authApi.founder.list(); setAccounts(data.accounts); setResets(data.resetRequests) } catch (error) { setMessage(error instanceof Error ? error.message : 'Founder data could not load.') } }
+  useEffect(() => { void load() }, [])
+  const pending = accounts.filter((account) => account.status === 'pending')
   const regularPending = pending.filter((account) => account.program === 'zero2hero')
   const yourShotPending = pending.filter((account) => account.program === 'your-shot')
-  const resets = state.resetRequests.filter((request) => request.status === 'pending')
-  const decide = (id: string, approve: boolean) => setState({ ...state, accounts: approve ? state.accounts.map((account) => account.id === id ? { ...account, status: 'approved', password: defaultPassword(account.username), mustChangePassword: true } : account) : state.accounts.filter((account) => account.id !== id) })
-  const decideReset = (id: string, approve: boolean) => { const request = state.resetRequests.find((item) => item.id === id); if (!request) return; setState({ ...state, accounts: approve ? state.accounts.map((account) => account.id === request.accountId ? { ...account, password: defaultPassword(account.username), mustChangePassword: true } : account) : state.accounts, resetRequests: state.resetRequests.map((item) => item.id === id ? { ...item, status: approve ? 'approved' : 'denied' } : item) }) }
-  const resetMember = (account: PortalAccount) => setState({ ...state, accounts: state.accounts.map((item) => item.id === account.id ? { ...item, password: defaultPassword(item.username), mustChangePassword: true } : item) })
-  const removeMember = (account: PortalAccount) => setState({ ...state, accounts: state.accounts.filter((item) => item.id !== account.id), recordings: state.recordings.map((post) => ({ ...post, likes: post.likes.filter((id) => id !== account.id) })), resetRequests: state.resetRequests.filter((request) => request.accountId !== account.id) })
+  const decide = async (id: string, approve: boolean) => { await authApi.founder.accountAction(id, approve ? 'approve' : 'decline'); await load() }
+  const decideReset = async (id: string, approve: boolean) => { await authApi.founder.resetAction(id, approve ? 'approve' : 'deny'); await load() }
+  const resetMember = async (account: PortalAccount) => { await authApi.founder.accountAction(account.id, 'reset'); await load() }
+  const removeMember = async (account: PortalAccount) => { await authApi.founder.accountAction(account.id, 'delete'); await load() }
   const requestList = (accounts: PortalAccount[], empty: string) => <div className="approval-list">{accounts.length ? accounts.map((account) => <article key={account.id}><span>{account.displayName.slice(0, 2).toUpperCase()}</span><div><h3>{account.displayName}</h3><p>@{account.username} · Default: {defaultPassword(account.username)}</p></div><button className="secondary" onClick={() => decide(account.id, false)}>Decline</button><button className="primary" onClick={() => decide(account.id, true)}>Approve</button></article>) : <div className="founder-empty">{empty}</div>}</div>
-  return <section><div className="portal-title"><div><small>FOUNDER CONTROLS</small><h1>Members & security</h1><p>ZERO 2 HERO and Your Shot requests stay in separate approval queues.</p></div></div><h2 className="founder-section-title">ZERO 2 HERO signup requests</h2>{requestList(regularPending, 'No pending ZERO 2 HERO signups.')}<h2 className="founder-section-title">Your Shot signup requests</h2>{requestList(yourShotPending, 'No pending Your Shot signups.')}<h2 className="founder-section-title">Password reset requests</h2><div className="approval-list">{resets.length ? resets.map((request) => <article key={request.id}><span>{request.username.slice(0, 2).toUpperCase()}</span><div><h3>@{request.username}</h3><p>Security PIN check: <b className={request.pinPassed ? 'pin-pass' : 'pin-fail'}>{request.pinPassed ? 'PASS' : 'FAIL'}</b></p></div><button className="secondary" onClick={() => decideReset(request.id, false)}>Deny</button><button className="primary" disabled={!request.pinPassed} onClick={() => decideReset(request.id, true)}>Approve reset</button></article>) : <div className="founder-empty">No pending password resets.</div>}</div><section className="member-roster"><small>APPROVED MEMBERS</small>{state.accounts.filter((account) => account.status === 'approved').map((account) => <div className="member-row" key={account.id}><div><b>{account.displayName}</b><span>@{account.username} · {account.program === 'your-shot' ? 'Your Shot' : 'ZERO 2 HERO'} · {account.mustChangePassword ? 'Must update password' : 'Security ready'}</span></div><i>{account.role}</i>{account.id !== currentAccount.id && <><button onClick={() => resetMember(account)}>Reset password</button><button className="danger-button" onClick={() => removeMember(account)}>Remove user</button></>}</div>)}</section></section>
+  return <section><div className="portal-title"><div><small>FOUNDER CONTROLS</small><h1>Members & security</h1><p>Accounts, approvals, password hashes, and sessions now live on the secure server.</p></div></div>{message && <p className="form-message">{message}</p>}<h2 className="founder-section-title">ZERO 2 HERO signup requests</h2>{requestList(regularPending, 'No pending ZERO 2 HERO signups.')}<h2 className="founder-section-title">Your Shot signup requests</h2>{requestList(yourShotPending, 'No pending Your Shot signups.')}<h2 className="founder-section-title">Password reset requests</h2><div className="approval-list">{resets.length ? resets.map((request) => <article key={request.id}><span>{request.username.slice(0, 2).toUpperCase()}</span><div><h3>@{request.username}</h3><p>Security PIN check: <b className={request.pinPassed ? 'pin-pass' : 'pin-fail'}>{request.pinPassed ? 'PASS' : 'FAIL'}</b></p></div><button className="secondary" onClick={() => void decideReset(request.id, false)}>Deny</button><button className="primary" disabled={!request.pinPassed} onClick={() => void decideReset(request.id, true)}>Approve reset</button></article>) : <div className="founder-empty">No pending password resets.</div>}</div><section className="member-roster"><small>APPROVED MEMBERS</small>{accounts.filter((account) => account.status === 'approved').map((account) => <div className="member-row" key={account.id}><div><b>{account.displayName}</b><span>@{account.username} · {account.program === 'your-shot' ? 'Your Shot' : 'ZERO 2 HERO'} · {account.mustChangePassword ? 'Must update password' : 'Security ready'}</span></div><i>{account.role}</i>{account.id !== currentAccount.id && <><button onClick={() => void resetMember(account)}>Reset password</button><button className="danger-button" onClick={() => void removeMember(account)}>Remove user</button></>}</div>)}</section></section>
 }
