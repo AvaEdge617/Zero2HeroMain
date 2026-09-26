@@ -145,5 +145,13 @@ app.post('/api/founder/resets/:id/:action', requireFounder, async (req, res) => 
 
 app.use((error, _req, res, _next) => { console.error(error); res.status(500).json({ error: 'Server error.' }) })
 const port = Number(process.env.PORT ?? 8787)
-await initDatabase()
-app.listen(port, '0.0.0.0', () => console.log(`ZERO 2 HERO API listening on ${port}`))
+try {
+  console.log('Initializing ZERO 2 HERO database')
+  await initDatabase()
+  console.log('ZERO 2 HERO database ready')
+  app.listen(port, '0.0.0.0', () => console.log(`ZERO 2 HERO API listening on ${port}`))
+} catch (error) {
+  console.error('ZERO 2 HERO startup failed', error)
+  await pool.end().catch(() => {})
+  process.exit(1)
+}
