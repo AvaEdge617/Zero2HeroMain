@@ -6,6 +6,7 @@ export interface JourneyInput {
   startingPoint: string
   hero: string
   commitment: string
+  pace?: 'self-paced' | 'deadline'
   deadline: string
   resources: string
 }

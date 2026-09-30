@@ -55,4 +55,9 @@ describe('journey progression', () => {
     expect(new Set(missions.map((mission) => mission.levelId)).size).toBe(9)
     expect(missions.every((mission) => mission.description.includes('Deliverable:'))).toBe(true)
   })
+
+  it('keeps self-paced Journeys valid without a deadline', () => {
+    const selfPaced: JourneyInput = { ...input, pace: 'self-paced', deadline: '' }
+    expect(makeMissions(planJourney(selfPaced), selfPaced)).toHaveLength(5)
+  })
 })

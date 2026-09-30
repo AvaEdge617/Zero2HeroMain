@@ -11,7 +11,7 @@ import { authApi } from './lib/authApi'
 import type { PortalAccount } from './lib/portal'
 
 type View = 'landing' | 'create' | 'plan' | 'dashboard' | 'public' | 'challenge' | 'portal' | 'access'
-const emptyInput: JourneyInput = { goal: '', startingPoint: '', hero: '', commitment: '', deadline: '', resources: '' }
+const emptyInput: JourneyInput = { goal: '', startingPoint: '', hero: '', commitment: '', pace: 'self-paced', deadline: '', resources: '' }
 
 function Icon({ name }: { name: 'arrow' | 'spark' | 'check' | 'wallet' | 'proof' | 'share' }) {
   const paths = {
@@ -161,11 +161,10 @@ function JourneyForm({ input, setInput, submit }: { input: JourneyInput; setInpu
     ['startingPoint', 'Where are you starting?', 'Be honest. Complete beginner is a great starting point.'],
     ['hero', 'What does Hero look like?', 'Describe a specific outcome you can demonstrate.'],
     ['commitment', 'What can you realistically commit?', 'Example: 4 focused sessions each week'],
-    ['deadline', 'Is there a deadline?', 'Example: 5 weeks or October 24'],
     ['resources', 'What do you already have?', 'Equipment, tools, people, or experience'],
   ]
   return <section className="flow-page"><div className="flow-kicker">CREATE A JOURNEY <span>01 / 03</span></div><h1>Establish your <em>Zero.</em></h1><p>Give us enough context to propose a path you can actually finish.</p>
-    <form className="journey-form" onSubmit={submit}>{fields.map(([key, label, placeholder], index) => <label key={key}><span><b>{String(index + 1).padStart(2, '0')}</b>{label}</span>{key === 'startingPoint' || key === 'hero' ? <textarea required value={input[key]} placeholder={placeholder} onChange={(event) => setInput({ ...input, [key]: event.target.value })} /> : <input required={index < 4} value={input[key]} placeholder={placeholder} onChange={(event) => setInput({ ...input, [key]: event.target.value })} />}</label>)}
+    <form className="journey-form" onSubmit={submit}>{fields.map(([key, label, placeholder], index) => <label key={key}><span><b>{String(index + 1).padStart(2, '0')}</b>{label}</span>{key === 'startingPoint' || key === 'hero' ? <textarea required value={input[key]} placeholder={placeholder} onChange={(event) => setInput({ ...input, [key]: event.target.value })} /> : <input required={index < 4} value={input[key]} placeholder={placeholder} onChange={(event) => setInput({ ...input, [key]: event.target.value })} />}</label>)}<label><span><b>06</b>How do you want to pace this Journey?</span><select value={input.pace ?? 'self-paced'} onChange={(event) => setInput({ ...input, pace: event.target.value as JourneyInput['pace'], deadline: event.target.value === 'self-paced' ? '' : input.deadline })}><option value="self-paced">Self-paced — move when ready</option><option value="deadline">Target deadline — work toward a date or timeframe</option></select></label>{input.pace === 'deadline' && <label><span><b>07</b>What is the target date or timeframe?</span><input value={input.deadline} placeholder="Example: 30 days or October 24" onChange={(event) => setInput({ ...input, deadline: event.target.value })} /></label>}
       <button className="primary full" type="submit">Generate my path <Icon name="spark" /></button></form>
   </section>
 }
