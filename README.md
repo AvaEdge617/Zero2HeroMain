@@ -17,6 +17,7 @@ This repository contains the competition MVP for the Nimiq Mini Apps Competition
 - Mobile-first landing page that explains the product in under 60 seconds
 - Conversational Journey creation covering starting point, Hero outcome, time, deadline, and resources
 - Deterministic path planning that works without an AI key
+- A reusable 30-day business-launch path when a Journey deadline is set to `30 days`
 - Editable five-Level plan before Journey approval
 - Initial Practice, Demonstrate, Create, and Boss Missions
 - Photo, video, and basic Proof of Work flows

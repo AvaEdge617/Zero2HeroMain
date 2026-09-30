@@ -34,4 +34,23 @@ describe('journey progression', () => {
     expect(XP_RULES.basic).toBeLessThan(XP_RULES.photo)
     expect(XP_RULES.photo).toBeLessThan(XP_RULES.video)
   })
+
+  it('creates a complete 30-day business-launch challenge when requested', () => {
+    const businessInput: JourneyInput = {
+      goal: 'Open a community connections business for people with I/DD in Denver',
+      startingPoint: 'Early research and local relationships',
+      hero: 'Run an accessible first community-connection pilot and present its next-step plan',
+      commitment: 'One focused task each day',
+      deadline: '30 days',
+      resources: 'Local contacts and a small startup budget',
+    }
+    const levels = planJourney(businessInput)
+    const missions = makeMissions(levels, businessInput)
+
+    expect(levels.map((level) => level.name)).toContain('Design a safe pilot')
+    expect(missions).toHaveLength(30)
+    expect(missions.map((mission) => mission.day)).toEqual(Array.from({ length: 30 }, (_, index) => index + 1))
+    expect(missions.at(-1)).toMatchObject({ type: 'BOSS', proofRequired: 'video' })
+    expect(missions.filter((mission) => mission.levelId === 'level-1')).toHaveLength(6)
+  })
 })
