@@ -7,6 +7,8 @@ import { createDjChallenge, djChallengeLevels, djChallengeMissions, djResourceUr
 import { loadJourneys, saveJourneys } from './lib/store'
 import Portal from './Portal'
 import MainAccess from './MainAccess'
+import { authApi } from './lib/authApi'
+import type { PortalAccount } from './lib/portal'
 
 type View = 'landing' | 'create' | 'plan' | 'dashboard' | 'public' | 'challenge' | 'portal' | 'access'
 const emptyInput: JourneyInput = { goal: '', startingPoint: '', hero: '', commitment: '', deadline: '', resources: '' }
@@ -29,8 +31,11 @@ function Brand() {
 
 function App() {
   const [view, setView] = useState<View>('landing')
-  const [journeys, setJourneys] = useState<Journey[]>(() => loadJourneys().map((journey) => upgradeDjChallenge(journey)))
-  const [activeId, setActiveId] = useState<string | null>(() => loadJourneys()[0]?.id ?? null)
+  const [account, setAccount] = useState<PortalAccount | null>(null)
+  const [accountLoading, setAccountLoading] = useState(true)
+  const [journeysReady, setJourneysReady] = useState(false)
+  const [journeys, setJourneys] = useState<Journey[]>([])
+  const [activeId, setActiveId] = useState<string | null>(null)
   const [input, setInput] = useState<JourneyInput>(emptyInput)
   const [levels, setLevels] = useState<JourneyLevel[]>([])
   const [wallet, setWallet] = useState<WalletState>({ status: 'idle' })
@@ -38,7 +43,19 @@ function App() {
   const [yourShotApproved, setYourShotApproved] = useState(false)
 
   const active = journeys.find((journey) => journey.id === activeId) ?? journeys[0]
-  useEffect(() => saveJourneys(journeys), [journeys])
+  const journeyAccount = account && (account.role === 'founder' || account.program === 'zero2hero') ? account : null
+  useEffect(() => {
+    authApi.session().then(({ account: current }) => {
+      setAccount(current)
+      setYourShotApproved(Boolean(current && (current.role === 'founder' || current.program === 'your-shot')))
+    }).catch(() => setAccount(null)).finally(() => setAccountLoading(false))
+  }, [])
+  useEffect(() => {
+    if (!journeyAccount) { setJourneys([]); setActiveId(null); setJourneysReady(false); return }
+    const stored = loadJourneys(journeyAccount.id).map((journey) => upgradeDjChallenge(journey))
+    setJourneys(stored); setActiveId(stored[0]?.id ?? null); setJourneysReady(true)
+  }, [journeyAccount])
+  useEffect(() => { if (journeyAccount && journeysReady) saveJourneys(journeyAccount.id, journeys) }, [journeyAccount, journeys, journeysReady])
   useEffect(() => {
     const route = () => {
       const hash = location.hash.replace(/^#\/?/, '')
@@ -58,11 +75,12 @@ function App() {
   useEffect(() => { if (!toast) return; const timer = setTimeout(() => setToast(''), 2600); return () => clearTimeout(timer) }, [toast])
 
   const updateJourney = (next: Journey) => setJourneys((all) => all.map((journey) => journey.id === next.id ? next : journey))
-  const start = () => { setInput(emptyInput); setLevels([]); setView('create'); scrollTo(0, 0) }
+  const start = () => { if (!journeyAccount) { location.hash = 'login'; setView('access'); return }; setInput(emptyInput); setLevels([]); setView('create'); scrollTo(0, 0) }
   const propose = (event: FormEvent) => { event.preventDefault(); setLevels(planJourney(input)); setView('plan'); scrollTo(0, 0) }
   const approve = () => {
     const id = crypto.randomUUID()
-    const journey: Journey = { id, owner: 'Onna', input, levels, missions: makeMissions(levels, input), proofs: [], rewardEvents: [], xp: 0, public: true, createdAt: new Date().toISOString() }
+    if (!journeyAccount) { location.hash = 'login'; setView('access'); return }
+    const journey: Journey = { id, owner: journeyAccount.displayName, input, levels, missions: makeMissions(levels, input), proofs: [], rewardEvents: [], xp: 0, public: true, createdAt: new Date().toISOString() }
     setJourneys((all) => [journey, ...all]); setActiveId(id); setView('dashboard'); location.hash = 'app'; scrollTo(0, 0)
   }
 
@@ -77,11 +95,11 @@ function App() {
   }
 
   if (view === 'portal') return <Portal back={() => { location.hash = ''; setView('landing') }} openCourse={() => { setYourShotApproved(true); location.hash = 'challenge'; setView('challenge') }} />
-  if (view === 'access') return <MainAccess back={() => { location.hash = ''; setView('landing') }} startJourney={start} continueJourney={active ? () => openExisting(active.id) : undefined} />
+  if (view === 'access') return <MainAccess back={() => { location.hash = ''; setView('landing') }} startJourney={start} continueJourney={active ? () => openExisting(active.id) : undefined} account={journeyAccount} loading={accountLoading} accountChanged={(next) => { setAccount(next); if (!next) { setJourneys([]); setActiveId(null); setJourneysReady(false) } }} />
 
   return <div className="app-shell">
     <div className="ambient ambient-a" /><div className="ambient ambient-b" />
-    <header className="topbar"><Brand /><nav><button className="nav-link" onClick={() => { location.hash = 'portal'; setView('portal') }}>Your Shot portal</button><button className="nav-link" onClick={() => { location.hash = 'login'; setView('access') }}>Log in / Sign up</button>{active && <button className="nav-link" onClick={() => openExisting(active.id)}>My journey</button>}<WalletButton wallet={wallet} connect={connect} /></nav></header>
+    <header className="topbar"><Brand /><nav><button className="nav-link" onClick={() => { location.hash = 'portal'; setView('portal') }}>Your Shot portal</button><button className="nav-link" onClick={() => { location.hash = 'login'; setView('access') }}>{journeyAccount ? journeyAccount.displayName : 'Log in / Sign up'}</button>{journeyAccount && active && <button className="nav-link" onClick={() => openExisting(active.id)}>My journey</button>}<WalletButton wallet={wallet} connect={connect} /></nav></header>
     <main>
       {view === 'landing' && <Landing start={start} challenge={previewChallenge} portal={() => { location.hash = 'portal'; setView('portal') }} active={active} openExisting={openExisting} />}
       {view === 'challenge' && <ChallengePreview begin={beginChallenge} alreadyStarted={journeys.some((journey) => journey.templateId === DJ_CHALLENGE_ID)} approved={yourShotApproved} openPortal={() => { location.hash = 'portal'; setView('portal') }} />}
@@ -90,6 +108,7 @@ function App() {
       {view === 'dashboard' && active && <Dashboard journey={active} update={updateJourney} wallet={wallet} connect={connect} publicView={() => { location.hash = `journey/${active.id}`; setView('public') }} notify={setToast} />}
       {view === 'dashboard' && !active && <Landing start={start} challenge={previewChallenge} portal={() => { location.hash = 'portal'; setView('portal') }} active={active} openExisting={openExisting} />}
       {view === 'public' && active && <PublicJourney journey={active} start={start} notify={setToast} />}
+      {view === 'public' && !active && <Landing start={start} challenge={previewChallenge} portal={() => { location.hash = 'portal'; setView('portal') }} active={active} openExisting={openExisting} />}
     </main>
     {toast && <div className="toast" role="status">{toast}</div>}
   </div>

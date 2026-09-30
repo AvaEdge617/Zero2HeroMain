@@ -1,17 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { authApi } from './lib/authApi'
 import type { PortalAccount } from './lib/portal'
 import { FirstLoginSetup, MemberApprovals } from './Portal'
 
-export default function MainAccess({ back, startJourney, continueJourney }: { back: () => void; startJourney: () => void; continueJourney?: () => void }) {
-  const [account, setAccount] = useState<PortalAccount | null>(null)
-  const [loading, setLoading] = useState(true)
-  useEffect(() => { authApi.session().then(({ account: current }) => { if (current && (current.role === 'founder' || current.program === 'zero2hero')) setAccount(current) }).finally(() => setLoading(false)) }, [])
-  const logout = async () => { await authApi.logout().catch(() => undefined); setAccount(null) }
+export default function MainAccess({ back, startJourney, continueJourney, account, loading, accountChanged }: { back: () => void; startJourney: () => void; continueJourney?: () => void; account: PortalAccount | null; loading: boolean; accountChanged: (account: PortalAccount | null) => void }) {
+  const logout = async () => { await authApi.logout().catch(() => undefined); accountChanged(null) }
   if (loading) return <section className="security-setup"><p>Checking secure access…</p></section>
-  if (!account) return <MainLogin login={setAccount} back={back} />
-  if (account.mustChangePassword) return <FirstLoginSetup account={account} finish={async (password, pin) => { await authApi.finishFirstLogin(password, pin); setAccount({ ...account, mustChangePassword: false }) }} logout={logout} />
+  if (!account) return <MainLogin login={accountChanged} back={back} />
+  if (account.mustChangePassword) return <FirstLoginSetup account={account} finish={async (password, pin) => { await authApi.finishFirstLogin(password, pin); accountChanged({ ...account, mustChangePassword: false }) }} logout={logout} />
   return <section className="portal-shell"><header className="portal-head"><button className="portal-wordmark" onClick={back}><span>ZERO 2 HERO</span><b>MEMBER ACCESS</b></button><nav>{account.role === 'founder' && <span className="founder-access-label">Founder dashboard</span>}</nav><div className="portal-profile"><span>{account.displayName.slice(0, 2).toUpperCase()}</span><div><b>{account.displayName}</b><small>{account.role}</small></div><button onClick={logout}>Log out</button></div></header><main className="portal-main">{account.role === 'founder' ? <MemberApprovals currentAccount={account} /> : <section className="member-home"><small>WELCOME BACK, HERO</small><h1>Your next Mission<br />starts here.</h1><p>Open your Journey dashboard or begin a new path toward a real skill you can prove.</p><div className="hero-actions">{continueJourney && <button className="primary" onClick={continueJourney}>Continue my Journey</button>}<button className="secondary" onClick={startJourney}>Start a new Journey</button></div></section>}</main></section>
 }
 

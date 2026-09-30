@@ -1,20 +1,20 @@
 import type { Journey } from '../types'
 
-const KEY = 'zero2hero.journeys.v1'
+const keyFor = (accountId: string) => `zero2hero.journeys.v2.${accountId}`
 
-export function loadJourneys(): Journey[] {
+export function loadJourneys(accountId: string): Journey[] {
   try {
-    const value = localStorage.getItem(KEY)
+    const value = localStorage.getItem(keyFor(accountId))
     return value ? JSON.parse(value) as Journey[] : []
   } catch {
     return []
   }
 }
 
-export function saveJourneys(journeys: Journey[]) {
-  localStorage.setItem(KEY, JSON.stringify(journeys))
+export function saveJourneys(accountId: string, journeys: Journey[]) {
+  localStorage.setItem(keyFor(accountId), JSON.stringify(journeys))
 }
 
-export function clearJourneys() {
-  localStorage.removeItem(KEY)
+export function clearJourneys(accountId: string) {
+  localStorage.removeItem(keyFor(accountId))
 }

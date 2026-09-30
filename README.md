@@ -76,7 +76,7 @@ No environment variables or secrets are required for this MVP.
 
 ## Known limitations
 
-- Journeys and proof metadata are stored only in the current browser.
+- Journeys and proof metadata are stored only in the current browser, separated by authenticated account. Logging out hides them, but they do not yet follow the account to another device.
 - Accounts, password hashes, sessions, approvals, and reset requests use the hosted PostgreSQL backend. Recordings, comments, likes, companion completion, and chat remain browser-local until durable authenticated storage is added.
 - Newly approved account temporary passwords follow `username0205` and must be changed at first login. Seed account passwords come only from Render secrets and are never stored in the frontend or repository.
 - Local audio uploads are limited to 3 MB because the demo stores them in browser storage. RekordBridge currently points to a clearly labeled placeholder until its file is hosted.
