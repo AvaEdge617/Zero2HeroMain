@@ -72,7 +72,7 @@ async function initDatabase() {
     const hash = await bcrypt.hash(seed.password, 12)
     await pool.query(`INSERT INTO accounts (id, username, username_key, display_name, password_hash, security_pin_hash, role, program, status, must_change_password, agreed_to_positivity)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'approved',FALSE,TRUE)
-      ON CONFLICT (username_key) DO UPDATE SET role=EXCLUDED.role, program=EXCLUDED.program, status='approved'`,
+      ON CONFLICT (username_key) DO UPDATE SET role=EXCLUDED.role, program=EXCLUDED.program, status='approved', password_hash=CASE WHEN EXCLUDED.role='founder' THEN EXCLUDED.password_hash ELSE accounts.password_hash END`,
       [crypto.randomUUID(), seed.username, normalize(seed.username), seed.displayName, hash, await bcrypt.hash(process.env.SEED_SECURITY_PIN ?? '0205', 12), seed.role, seed.program])
   }
   await pool.query('DELETE FROM sessions WHERE expires_at <= NOW()')
