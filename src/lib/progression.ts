@@ -60,7 +60,8 @@ export function planJourney(input: JourneyInput): JourneyLevel[] {
 const categoryFor = (index: number): MissionType => (['PRACTICE', 'DEMONSTRATE', 'CREATE', 'PRACTICE', 'BOSS'] as MissionType[])[index]
 
 export function makeMissions(levels: JourneyLevel[], input: JourneyInput): Mission[] {
-  if (/\b30[ -]?days?\b/i.test(input.deadline) && isBusinessJourney(input)) return makeThirtyDayBusinessMissions(levels)
+  if (isRegulatedServiceJourney(input)) return makeBusinessMissions(levels, input.pace === 'deadline' || (!input.pace && Boolean(input.deadline)))
+  if (/\b30[ -]?days?\b/i.test(input.deadline) && isBusinessJourney(input)) return makeBusinessMissions(levels, true)
   return levels.map((level, index) => ({
     id: `mission-${index + 1}`,
     levelId: level.id,
@@ -108,7 +109,7 @@ const businessDays: Array<[string, string, MissionType, ProofType]> = [
   ['Boss Mission: present the feasibility decision', 'Present the need, service boundary, training matrix, compliance questions, insurance risks, documentation gaps, partner feedback, and responsible next step. Deliverable: a 5–10 minute video presentation ending in a clear go, revise, pause, or stop decision.', 'BOSS', 'video'],
 ]
 
-function makeThirtyDayBusinessMissions(levels: JourneyLevel[]): Mission[] {
+function makeBusinessMissions(levels: JourneyLevel[], scheduled: boolean): Mission[] {
   return businessDays.map(([title, description, type, proofRequired], index) => ({
     id: `day-${index + 1}`,
     levelId: levels[Math.min(Math.floor(index * levels.length / businessDays.length), levels.length - 1)]?.id ?? `level-${Math.floor(index * levels.length / businessDays.length) + 1}`,
@@ -118,8 +119,7 @@ function makeThirtyDayBusinessMissions(levels: JourneyLevel[]): Mission[] {
     xp: type === 'BOSS' ? 100 : 50,
     proofRequired,
     completed: false,
-    day: index + 1,
-    phase: 'challenge',
+    ...(scheduled ? { day: index + 1, phase: 'challenge' as const } : {}),
   }))
 }
 

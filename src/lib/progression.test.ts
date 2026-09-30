@@ -60,4 +60,15 @@ describe('journey progression', () => {
     const selfPaced: JourneyInput = { ...input, pace: 'self-paced', deadline: '' }
     expect(makeMissions(planJourney(selfPaced), selfPaced)).toHaveLength(5)
   })
+
+  it('keeps the full regulated-service backlog when a Journey is self-paced', () => {
+    const regulated: JourneyInput = {
+      goal: 'Start an I/DD community connection service', startingPoint: 'Research stage', hero: 'A compliant, ready-to-launch service model',
+      commitment: 'Move when ready', pace: 'self-paced', deadline: '', resources: 'Community relationships',
+    }
+    const missions = makeMissions(planJourney(regulated), regulated)
+    expect(missions).toHaveLength(30)
+    expect(missions.every((mission) => mission.day === undefined)).toBe(true)
+    expect(missions.at(-1)?.type).toBe('BOSS')
+  })
 })
