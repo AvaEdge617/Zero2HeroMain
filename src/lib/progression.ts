@@ -24,6 +24,17 @@ const templates: Record<string, Array<[string, string]>> = {
     ['Invite the first community', 'Share the offer, gather interest, and prepare the first participants and partners.'],
     ['Run and prove the launch', 'Deliver the pilot, collect feedback, and decide the next responsible step.'],
   ],
+  regulatedService: [
+    ['Define the community need and service boundary', 'Identify the need, the people served, and the services that are outside the first offer.'],
+    ['Learn the service landscape', 'Understand the local system, funding routes, partners, and existing providers.'],
+    ['Map training and competency requirements', 'Identify required qualifications, role-specific training, supervision, and verification.'],
+    ['Confirm the regulatory pathway', 'Use official sources and qualified advisors to determine approval, licensing, enrollment, and reporting requirements.'],
+    ['Build the legal and insurance foundation', 'Choose an entity and risk approach only after professional review of the actual service model.'],
+    ['Design documentation and privacy practices', 'Define the records, consent, incident, retention, and access practices required before serving anyone.'],
+    ['Build accountable partnerships', 'Create referral, advisory, venue, and escalation relationships that protect participants.'],
+    ['Prove operational readiness', 'Test the non-service workflow, staff readiness, accessibility, and emergency process.'],
+    ['Make a responsible go or no-go decision', 'Present evidence, unresolved risks, and the next compliant step before offering the service.'],
+  ],
   default: [
     ['Learn the landscape', 'Understand the tools, language, and first principles.'],
     ['Build the foundation', 'Practice the smallest essential skills.'],
@@ -34,12 +45,14 @@ const templates: Record<string, Array<[string, string]>> = {
 }
 
 const isBusinessJourney = (input: JourneyInput) => /business|company|service|organization|venture/i.test(`${input.goal} ${input.hero}`)
+const isRegulatedServiceJourney = (input: JourneyInput) => /i\/dd|intellectual|developmental|disabilit|medicaid|waiver|care provider|direct support/i.test(`${input.goal} ${input.hero}`)
 
 export function planJourney(input: JourneyInput): JourneyLevel[] {
   const subject = `${input.goal} ${input.hero}`
   const key = /dj|mix|rekordbox/i.test(subject)
     ? 'dj'
-    : isBusinessJourney(input) ? 'business'
+    : isRegulatedServiceJourney(input) ? 'regulatedService'
+      : isBusinessJourney(input) ? 'business'
       : /run|fitness|workout|5k|gym/i.test(subject) ? 'fitness' : 'default'
   return templates[key].map(([name, description], index) => ({ id: `level-${index + 1}`, name, description }))
 }
@@ -69,13 +82,13 @@ const businessDays: Array<[string, string, MissionType, ProofType]> = [
   ['Schedule three listening conversations', 'Invite three people with lived experience, family members, or trusted supporters to 20-minute listening conversations. Deliverable: three calendar invitations or written confirmations.', 'DEMONSTRATE', 'basic'],
   ['Run the first listening conversation', 'Ask what makes connection difficult, what support is useful, what feels respectful, and what would make someone want to return. Deliverable: anonymized notes with three direct needs or strengths.', 'DEMONSTRATE', 'basic'],
   ['Synthesize what you heard', 'Compare all completed conversation notes and identify repeated themes. Deliverable: a one-page summary with one focused problem the first pilot will solve and evidence for choosing it.', 'CREATE', 'photo'],
-  ['Choose a narrow first audience', 'Define one first participant group, one Denver area or access method, and one type of connection. Deliverable: a 50-word audience statement that excludes people or needs the pilot cannot responsibly support yet.', 'PRACTICE', 'basic'],
-  ['Draft the pilot experience', 'Create a timed outline for one small session: welcome, connection activity, breaks, support, transition, and closing. Deliverable: a run-of-show with owner and duration for every step.', 'CREATE', 'photo'],
-  ['Ask for accessibility feedback', 'Review the run-of-show with a person with lived experience and ask about language, pace, sensory needs, transportation, and communication access. Deliverable: a change log showing at least three decisions or the reason no change was needed.', 'DEMONSTRATE', 'basic'],
-  ['Research local requirements', 'Create a question list for Colorado and Denver licensing, insurance, background checks, transportation, and provider requirements. Do not guess at legal requirements. Deliverable: a list of questions, source links, and the qualified people you will consult before operating.', 'PRACTICE', 'basic'],
-  ['Set safety and consent boundaries', 'Draft plain-language rules for privacy, consent, emergencies, support needs, photos, and when to refer someone elsewhere. Deliverable: a one-page participant safety and consent draft.', 'CREATE', 'photo'],
-  ['Define the pilot offer', 'Write who the pilot is for, what happens, accessibility supports, duration, price or funding approach, contact method, and what is not included. Deliverable: a one-page offer that a partner can share unchanged.', 'CREATE', 'photo'],
-  ['Build a starter budget', 'List fixed costs, per-participant costs, partner contributions, and a conservative first-month target. Deliverable: a simple budget with best-case, expected, and stop-loss amounts.', 'PRACTICE', 'basic'],
+  ['Define the service boundary', 'Specify whether the first idea is a non-clinical community connection, a Medicaid-funded service, or another regulated model. Deliverable: a scope statement that names services you will not offer until qualified and approved.', 'PRACTICE', 'basic'],
+  ['Map training and competency needs', 'Start with free official HCPF and Colorado training materials, then list the credentials, background checks, supervision, and competencies that apply to each role. Deliverable: a training matrix with source, cost, owner, and verification method.', 'CREATE', 'photo'],
+  ['Confirm licensing and enrollment questions', 'Use official Colorado sources to identify questions about HCPF approval, CDPHE licensure, Medicaid enrollment, local rules, and reporting. Deliverable: a compliance question log for a qualified advisor; do not operate based on an assumption.', 'DEMONSTRATE', 'basic'],
+  ['Map insurance and risk needs', 'List the risks created by the actual service model: general liability, professional liability, workers compensation, transportation, property, and cyber/privacy. Deliverable: a comparison brief for an insurance professional, not a purchased policy.', 'PRACTICE', 'basic'],
+  ['Set safety, consent, and documentation boundaries', 'Draft plain-language rules for privacy, consent, emergencies, incident reporting, support needs, photos, record retention, and when to refer someone elsewhere. Deliverable: a policy index with gaps marked for professional review.', 'CREATE', 'photo'],
+  ['Define the feasibility offer', 'Write who the future service is for, the planned supports, funding assumptions, contact method, and what is not yet offered. Deliverable: a one-page feasibility brief that never represents the business as approved or operational.', 'CREATE', 'photo'],
+  ['Build a compliance-aware starter budget', 'List setup costs, training, insurance estimates, professional advice, technology, staff time, and conservative funding assumptions. Deliverable: a budget with free resources used first and paid needs clearly labeled.', 'PRACTICE', 'basic'],
   ['Name the business and message', 'Choose a working name and write a plain-language invitation that centers participants rather than services. Deliverable: a name, 30-word promise, and 100-word invitation.', 'CREATE', 'photo'],
   ['Make a simple interest form', 'Create an accessible form that lets someone express interest, request an accommodation, choose a contact method, or ask for a conversation. Deliverable: a working form tested by one other person.', 'CREATE', 'photo'],
   ['Prepare a partner introduction', 'Write a concise email and one-page handout for groups that may refer, host, or collaborate. Deliverable: one email template and one partner handout with a clear ask.', 'PRACTICE', 'basic'],
@@ -88,17 +101,17 @@ const businessDays: Array<[string, string, MissionType, ProofType]> = [
   ['Confirm accommodations and support', 'Contact interested participants using their preferred method to understand access needs and confirm what the pilot can provide. Deliverable: an anonymized accommodation checklist and any changes to the run-of-show.', 'PRACTICE', 'basic'],
   ['Rehearse the pilot', 'Run the welcome, activity, transitions, support plan, and closing with a trusted helper. Deliverable: a short rehearsal recording and a list of changes before the live pilot.', 'DEMONSTRATE', 'video'],
   ['Prepare feedback questions', 'Make an accessible feedback method with no more than five questions about safety, belonging, usefulness, and improvements. Deliverable: a ready-to-use paper, digital, or conversation-based feedback script.', 'CREATE', 'photo'],
-  ['Run the first pilot session', 'Facilitate the session, follow the agreed boundaries, and record only proof that every person has consented to share. Deliverable: a completed run-of-show, attendance count, and consented proof of work.', 'DEMONSTRATE', 'video'],
+  ['Run a non-service workflow rehearsal', 'Rehearse inquiry, consent, accommodation, escalation, documentation, and follow-up without representing that a regulated service is live. Deliverable: a short rehearsal recording and a list of blockers before any participant service.', 'DEMONSTRATE', 'video'],
   ['Collect participant feedback', 'Gather feedback in the format participants prefer and thank everyone for their time. Deliverable: anonymized responses grouped into what worked, what did not, and requested changes.', 'DEMONSTRATE', 'basic'],
   ['Review results with advisors', 'Compare the pilot outcome with the original promise and review the findings with an advisor or partner. Deliverable: a decision memo stating continue, revise, pause, or stop and why.', 'CREATE', 'photo'],
   ['Publish the next-step plan', 'Write the next 30-day plan covering partnerships, operations, funding, and the next pilot date. Deliverable: a one-page plan with dates, owners, and the first three actions.', 'CREATE', 'photo'],
-  ['Boss Mission: present the pilot launch', 'Present the purpose, pilot results, participant feedback themes, safety learnings, and responsible next step to an advisor or partner. Deliverable: a 5–10 minute video presentation and the decision you are asking for.', 'BOSS', 'video'],
+  ['Boss Mission: present the feasibility decision', 'Present the need, service boundary, training matrix, compliance questions, insurance risks, documentation gaps, partner feedback, and responsible next step. Deliverable: a 5–10 minute video presentation ending in a clear go, revise, pause, or stop decision.', 'BOSS', 'video'],
 ]
 
 function makeThirtyDayBusinessMissions(levels: JourneyLevel[]): Mission[] {
   return businessDays.map(([title, description, type, proofRequired], index) => ({
     id: `day-${index + 1}`,
-    levelId: levels[Math.min(Math.floor(index / 6), levels.length - 1)]?.id ?? `level-${Math.floor(index / 6) + 1}`,
+    levelId: levels[Math.min(Math.floor(index * levels.length / businessDays.length), levels.length - 1)]?.id ?? `level-${Math.floor(index * levels.length / businessDays.length) + 1}`,
     type,
     title,
     description,
