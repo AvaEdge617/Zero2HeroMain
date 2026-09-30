@@ -83,7 +83,7 @@ No environment variables or secrets are required for this MVP.
 - Uploaded files are represented by local filename metadata; production needs durable object storage and upload authorization.
 - The 30-day challenge is a reusable starter plan based on the accessible Your Shot course outline and resource topics; it is not official course content or a replacement for the lessons. Recording files are not persisted by this MVP.
 - Deterministic templates replace AI-generated planning for reliability and zero-key setup.
-- Public Journey URLs are shareable on the same browser but require hosted persistence for cross-device viewing.
+- Public Journey URLs require hosted persistence before they can reliably show a Journey on another device or to another account.
 - Community verification, escrow, payouts, followers, backing, and messaging are future work.
 - A real NIM transfer is intentionally disabled until its recipient and resolution rules are configured.
 

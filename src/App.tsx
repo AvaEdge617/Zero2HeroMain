@@ -33,7 +33,7 @@ function App() {
   const [view, setView] = useState<View>('landing')
   const [account, setAccount] = useState<PortalAccount | null>(null)
   const [accountLoading, setAccountLoading] = useState(true)
-  const [journeysReady, setJourneysReady] = useState(false)
+  const [journeysAccountId, setJourneysAccountId] = useState<string | null>(null)
   const [journeys, setJourneys] = useState<Journey[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
   const [input, setInput] = useState<JourneyInput>(emptyInput)
@@ -51,11 +51,11 @@ function App() {
     }).catch(() => setAccount(null)).finally(() => setAccountLoading(false))
   }, [])
   useEffect(() => {
-    if (!journeyAccount) { setJourneys([]); setActiveId(null); setJourneysReady(false); return }
+    if (!journeyAccount) { setJourneys([]); setActiveId(null); setJourneysAccountId(null); return }
     const stored = loadJourneys(journeyAccount.id).map((journey) => upgradeDjChallenge(journey))
-    setJourneys(stored); setActiveId(stored[0]?.id ?? null); setJourneysReady(true)
+    setJourneys(stored); setActiveId(stored[0]?.id ?? null); setJourneysAccountId(journeyAccount.id)
   }, [journeyAccount])
-  useEffect(() => { if (journeyAccount && journeysReady) saveJourneys(journeyAccount.id, journeys) }, [journeyAccount, journeys, journeysReady])
+  useEffect(() => { if (journeyAccount && journeysAccountId === journeyAccount.id) saveJourneys(journeyAccount.id, journeys) }, [journeyAccount, journeys, journeysAccountId])
   useEffect(() => {
     const route = () => {
       const hash = location.hash.replace(/^#\/?/, '')
@@ -95,7 +95,7 @@ function App() {
   }
 
   if (view === 'portal') return <Portal back={() => { location.hash = ''; setView('landing') }} openCourse={() => { setYourShotApproved(true); location.hash = 'challenge'; setView('challenge') }} />
-  if (view === 'access') return <MainAccess back={() => { location.hash = ''; setView('landing') }} startJourney={start} continueJourney={active ? () => openExisting(active.id) : undefined} account={journeyAccount} loading={accountLoading} accountChanged={(next) => { setAccount(next); if (!next) { setJourneys([]); setActiveId(null); setJourneysReady(false) } }} />
+  if (view === 'access') return <MainAccess back={() => { location.hash = ''; setView('landing') }} startJourney={start} continueJourney={active ? () => openExisting(active.id) : undefined} account={journeyAccount} loading={accountLoading} accountChanged={(next) => { setAccount(next); if (!next) { setJourneys([]); setActiveId(null); setJourneysAccountId(null) } }} />
 
   return <div className="app-shell">
     <div className="ambient ambient-a" /><div className="ambient ambient-b" />
