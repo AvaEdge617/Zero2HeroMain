@@ -52,5 +52,6 @@ describe('journey progression', () => {
     expect(missions.map((mission) => mission.day)).toEqual(Array.from({ length: 30 }, (_, index) => index + 1))
     expect(missions.at(-1)).toMatchObject({ type: 'BOSS', proofRequired: 'video' })
     expect(missions.filter((mission) => mission.levelId === 'level-1')).toHaveLength(6)
+    expect(missions.every((mission) => mission.description.includes('Deliverable:'))).toBe(true)
   })
 })
