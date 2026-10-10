@@ -1,12 +1,22 @@
 import type { AccountProgram, PortalAccount, PasswordResetRequest } from './portal'
 
 const API_URL = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? 'http://localhost:8787'
+const REQUEST_TIMEOUT_MS = 12_000
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, { ...options, credentials: 'include', headers: { 'Content-Type': 'application/json', ...options.headers } })
-  const body = await response.json().catch(() => ({})) as { error?: string } & T
-  if (!response.ok) throw new Error(body.error ?? 'The server could not complete that request.')
-  return body
+  const controller = new AbortController()
+  const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  try {
+    const response = await fetch(`${API_URL}${path}`, { ...options, signal: controller.signal, credentials: 'include', headers: { 'Content-Type': 'application/json', ...options.headers } })
+    const body = await response.json().catch(() => ({})) as { error?: string } & T
+    if (!response.ok) throw new Error(body.error ?? 'The server could not complete that request.')
+    return body
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') throw new Error('The account service took too long to respond. Please try again.')
+    throw error
+  } finally {
+    window.clearTimeout(timeout)
+  }
 }
 
 export const authApi = {

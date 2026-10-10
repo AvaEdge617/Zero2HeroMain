@@ -13,7 +13,7 @@ export default function Portal({ back, openCourse }: { back: () => void; openCou
   const [loading, setLoading] = useState(true)
   const account = state.accounts.find((item) => item.id === accountId)
   useEffect(() => savePortalState(state), [state])
-  useEffect(() => { authApi.session().then(({ account: sessionAccount }) => { if (sessionAccount && (sessionAccount.role === 'founder' || sessionAccount.program === 'your-shot')) { setState((current) => ({ ...current, accounts: [sessionAccount] })); setAccountId(sessionAccount.id) } }).finally(() => setLoading(false)) }, [])
+  useEffect(() => { authApi.session().then(({ account: sessionAccount }) => { if (sessionAccount && (sessionAccount.role === 'founder' || sessionAccount.program === 'your-shot')) { setState((current) => ({ ...current, accounts: [sessionAccount] })); setAccountId(sessionAccount.id) } }).catch(() => undefined).finally(() => setLoading(false)) }, [])
   useEffect(() => { if (!notice) return; const timer = setTimeout(() => setNotice(''), 2800); return () => clearTimeout(timer) }, [notice])
 
   const login = (next: PortalAccount) => { setState((current) => ({ ...current, accounts: [next] })); setAccountId(next.id) }
