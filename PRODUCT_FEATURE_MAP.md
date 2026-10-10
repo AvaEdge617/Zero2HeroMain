@@ -37,7 +37,7 @@ ZERO 2 HERO is a progression platform for any real-world skill or goal. The Your
 - Start a personal Journey without a wallet or AI key.
 - Open the class-portal login and request an account.
 - Read the positivity clause before joining the community.
-- See RekordBridge as a clearly labeled future companion integration.
+- See CueCraft and RekordBridge as clearly labeled private-beta companion products, with honest release and hardware-validation boundaries.
 
 ## 3. Signup, approval, and account security
 
@@ -127,7 +127,9 @@ The class companion stays inside the DJ portal. It is an add-on to ZERO 2 HERO r
 - Compact lesson coach for tempo, cueing, phrasing, and EQ questions.
 - Controller setup walkthrough covering Play, Cue, Browse, Load, tempo, jog wheels, headphone cue, faders, EQ, and crossfader.
 
-RekordBridge can later add verified controller mapping and live MIDI capture. Until a release is hosted by **avaedge617**, its download remains a clearly labeled placeholder.
+CueCraft now has a Windows-first private beta with a two-deck local player, Set Planner, Transition Lab, guided practice, touch layouts, local progress, and selected DJ2GO2 Touch/DDJ-FLX4 workflows. RekordBridge has a Windows preview with MIDI Learn, validated profiles, supported controller translation, protected local pairing, and staged controller-input refresh.
+
+ZERO 2 HERO links these products to the DJ Journey without absorbing their code or responsibilities. It owns Journeys, Missions, Proof of Work, and XP; CueCraft owns DJ learning and practice; RekordBridge owns Windows mapping and MIDI connection. There is no public download until an approved build is hosted, and software tests do not establish physical Rekordbox response or audio quality.
 
 ## 7. Recording feed
 
