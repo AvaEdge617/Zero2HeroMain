@@ -30,7 +30,7 @@ This repository contains the competition MVP for the Nimiq Mini Apps Competition
 - Server-backed ZERO 2 HERO and Your Shot signups with separate Founder approval queues. Your Shot course, companion, recording feed, and chat require an approved server session.
 - Passwords and security PINs are bcrypt-hashed in PostgreSQL. Login sessions use random, hashed server-side tokens delivered through Secure, HttpOnly cookies.
 - Login rate limiting, strict input validation, origin checks, restricted CORS, Helmet security headers, generic reset responses, and server-authorized Founder actions.
-- Forced first-login password/PIN setup for newly approved members, PIN-checked reset requests, member removal, audio recording uploads, likes, comments, and one public live-chat room.
+- User-created passwords and security PINs at signup, Founder approval before access, PIN-checked reset requests, member removal, audio recording uploads, likes, comments, and one public live-chat room.
 - The DJ Companion is contained inside the class portal with Prepare, Listen, Mix, and Perform practice cards, timers, a compact lesson coach, and a controller-setup checklist. It is an optional class add-on rather than a second ZERO 2 HERO application.
 - The portal now explains the current CueCraft and RekordBridge private-beta capabilities. CueCraft owns the local two-deck learning, Set Planner, Transition Lab, guided practice, touch, and selected USB-controller workflows. RekordBridge owns Windows MIDI Learn, profiles, controller translation, and protected local pairing. ZERO 2 HERO continues to own Journeys, Missions, Proof of Work, and XP.
 - Official `@nimiq/mini-app-sdk` connection and direct NIM transfer flow inside Nimiq Pay
@@ -81,7 +81,7 @@ No secrets are required for the Nimiq flow. A physical Nimiq Pay test is still r
 
 - Journeys and proof metadata are stored only in the current browser, separated by authenticated account. Logging out hides them, but they do not yet follow the account to another device.
 - Accounts, password hashes, sessions, approvals, and reset requests use the hosted PostgreSQL backend. Recordings, comments, likes, companion completion, and chat remain browser-local until durable authenticated storage is added.
-- Newly approved account temporary passwords follow `username0205` and must be changed at first login. Seed account passwords come only from Render secrets and are never stored in the frontend or repository.
+- New applicants choose a strong password and private security PIN before submitting. The Founder can approve access without seeing either secret. Founder-approved resets use the temporary `username0205` format and force a password/PIN update at the next login. Seed account passwords come only from hosting secrets and are never stored in the frontend or repository.
 - Local audio uploads are limited to 3 MB because the demo stores them in browser storage. CueCraft and RekordBridge are described as private Windows previews; no public download is shown until an approved release is hosted.
 - CueCraft and RekordBridge do not silently share ZERO 2 HERO credentials, music, or progress. A learner explicitly chooses what practice evidence becomes Proof of Work.
 - Uploaded files are represented by local filename metadata; production needs durable object storage and upload authorization.

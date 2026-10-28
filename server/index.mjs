@@ -95,11 +95,12 @@ const setSession = async (res, accountId) => {
 app.get('/health', (_req, res) => res.json({ ok: true }))
 app.get('/api/auth/session', async (req, res) => { const account = await currentAccount(req); res.json({ account }) })
 app.post('/api/auth/signup', async (req, res) => {
-  const parsed = z.object({ username: z.string().trim().min(3).max(40).regex(/^[A-Za-z0-9_-]+$/), displayName: z.string().trim().min(1).max(80), program: z.enum(['zero2hero', 'your-shot']), agreedToPositivity: z.boolean().optional() }).safeParse(req.body)
+  const parsed = z.object({ username: z.string().trim().min(3).max(40).regex(/^[A-Za-z0-9_-]+$/), displayName: z.string().trim().min(1).max(80), password: z.string().max(200), pin: z.string().regex(/^\d{4,8}$/), program: z.enum(['zero2hero', 'your-shot']), agreedToPositivity: z.boolean().optional() }).safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: 'Check the signup fields.' })
+  if (!validPassword(parsed.data.password)) return res.status(400).json({ error: 'Use 12+ characters with uppercase, lowercase, and a number.' })
   if (parsed.data.program === 'your-shot' && !parsed.data.agreedToPositivity) return res.status(400).json({ error: 'Agree to the positivity clause.' })
   try {
-    await pool.query(`INSERT INTO accounts (id,username,username_key,display_name,password_hash,role,program,status,must_change_password,agreed_to_positivity) VALUES ($1,$2,$3,$4,$5,'user',$6,'pending',TRUE,$7)`, [crypto.randomUUID(), parsed.data.username, normalize(parsed.data.username), parsed.data.displayName, await bcrypt.hash(defaultPassword(parsed.data.username), 12), parsed.data.program, Boolean(parsed.data.agreedToPositivity)])
+    await pool.query(`INSERT INTO accounts (id,username,username_key,display_name,password_hash,security_pin_hash,role,program,status,must_change_password,agreed_to_positivity) VALUES ($1,$2,$3,$4,$5,$6,'user',$7,'pending',FALSE,$8)`, [crypto.randomUUID(), parsed.data.username, normalize(parsed.data.username), parsed.data.displayName, await bcrypt.hash(parsed.data.password, 12), await bcrypt.hash(parsed.data.pin, 12), parsed.data.program, Boolean(parsed.data.agreedToPositivity)])
     res.status(201).json({ ok: true })
   } catch (error) { if (error.code === '23505') return res.status(409).json({ error: 'That username is already taken.' }); throw error }
 })
@@ -130,7 +131,12 @@ app.get('/api/founder/accounts', requireFounder, async (_req, res) => { const ac
 app.post('/api/founder/accounts/:id/:action', requireFounder, async (req, res) => {
   const action = req.params.action
   if (!['approve','decline','delete','reset'].includes(action) || req.params.id === req.account.id) return res.status(400).json({ error: 'Invalid account action.' })
-  if (action === 'approve') { const found = await pool.query('SELECT username FROM accounts WHERE id=$1', [req.params.id]); if (!found.rowCount) return res.status(404).json({ error: 'Account not found.' }); await pool.query("UPDATE accounts SET status='approved',password_hash=$1,must_change_password=TRUE WHERE id=$2", [await bcrypt.hash(defaultPassword(found.rows[0].username), 12), req.params.id]) }
+  if (action === 'approve') {
+    const found = await pool.query('SELECT username, security_pin_hash FROM accounts WHERE id=$1', [req.params.id])
+    if (!found.rowCount) return res.status(404).json({ error: 'Account not found.' })
+    if (found.rows[0].security_pin_hash) await pool.query("UPDATE accounts SET status='approved' WHERE id=$1", [req.params.id])
+    else await pool.query("UPDATE accounts SET status='approved',password_hash=$1,must_change_password=TRUE WHERE id=$2", [await bcrypt.hash(defaultPassword(found.rows[0].username), 12), req.params.id])
+  }
   if (action === 'reset') { const found = await pool.query('SELECT username FROM accounts WHERE id=$1', [req.params.id]); if (!found.rowCount) return res.status(404).json({ error: 'Account not found.' }); await pool.query('UPDATE accounts SET password_hash=$1,must_change_password=TRUE WHERE id=$2', [await bcrypt.hash(defaultPassword(found.rows[0].username), 12), req.params.id]); await pool.query('DELETE FROM sessions WHERE account_id=$1', [req.params.id]) }
   if (action === 'decline' || action === 'delete') await pool.query("DELETE FROM accounts WHERE id=$1 AND role<>'founder'", [req.params.id])
   res.json({ ok: true })

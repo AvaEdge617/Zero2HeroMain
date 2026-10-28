@@ -22,7 +22,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 export const authApi = {
   session: () => request<{ account: PortalAccount | null }>('/api/auth/session'),
   login: (username: string, password: string, program: AccountProgram) => request<{ account: PortalAccount }>('/api/auth/login', { method: 'POST', body: JSON.stringify({ username, password, program }) }),
-  signup: (displayName: string, username: string, program: AccountProgram, agreedToPositivity = false) => request<{ ok: true }>('/api/auth/signup', { method: 'POST', body: JSON.stringify({ displayName, username, program, agreedToPositivity }) }),
+  signup: (displayName: string, username: string, password: string, pin: string, program: AccountProgram, agreedToPositivity = false) => request<{ ok: true }>('/api/auth/signup', { method: 'POST', body: JSON.stringify({ displayName, username, password, pin, program, agreedToPositivity }) }),
   logout: () => request<{ ok: true }>('/api/auth/logout', { method: 'POST' }),
   finishFirstLogin: (password: string, pin: string) => request<{ ok: true }>('/api/auth/first-login', { method: 'POST', body: JSON.stringify({ password, pin }) }),
   requestReset: (username: string, pin: string, program: AccountProgram) => request<{ ok: true; message: string }>('/api/auth/reset-request', { method: 'POST', body: JSON.stringify({ username, pin, program }) }),
