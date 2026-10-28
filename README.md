@@ -1,4 +1,4 @@
-# Zero 2 Hero
+# ZERO 2 HERO
 
 GitHub repository: **[AvaEdge617/Zero2HeroMain](https://github.com/AvaEdge617/Zero2HeroMain)**. The local folder remains the working copy and pushes to the `main` branch.
 
@@ -6,7 +6,7 @@ The repository deploys the frontend to GitHub Pages whenever `main` is pushed. A
 
 **Same mind. New skills. Bigger possibilities.**
 
-Zero 2 Hero turns a capability or outcome into a visible real-world progression path. A user establishes their **Zero**, defines their own **Hero**, reviews an attainable path, completes Missions, submits Proof of Work, and earns Journey-specific XP.
+ZERO 2 HERO turns a capability or outcome into a visible real-world progression path. A user establishes their **Zero**, defines their own **Hero**, reviews an attainable path, completes Missions, submits Proof of Work, and earns Journey-specific XP.
 
 The product supports any real-world skill or goal. The Your Shot DJ Journey and companion portal are a linked use case based on the founder's current competition, not the definition or limit of ZERO 2 HERO.
 
@@ -33,8 +33,8 @@ This repository contains the competition MVP for the Nimiq Mini Apps Competition
 - Forced first-login password/PIN setup for newly approved members, PIN-checked reset requests, member removal, audio recording uploads, likes, comments, and one public live-chat room.
 - The DJ Companion is contained inside the class portal with Prepare, Listen, Mix, and Perform practice cards, timers, a compact lesson coach, and a controller-setup checklist. It is an optional class add-on rather than a second ZERO 2 HERO application.
 - The portal now explains the current CueCraft and RekordBridge private-beta capabilities. CueCraft owns the local two-deck learning, Set Planner, Transition Lab, guided practice, touch, and selected USB-controller workflows. RekordBridge owns Windows MIDI Learn, profiles, controller translation, and protected local pairing. ZERO 2 HERO continues to own Journeys, Missions, Proof of Work, and XP.
-- Official `@nimiq/mini-app-sdk` boundary for account connection inside Nimiq Pay
-- Honest disconnected-browser state and planned NIM commitment history
+- Official `@nimiq/mini-app-sdk` connection and direct NIM transfer flow inside Nimiq Pay
+- Honest disconnected-browser state and wallet-confirmed NIM reward history
 - Local persistence through `localStorage`
 
 ## Architecture
@@ -73,9 +73,9 @@ The app imports the official `@nimiq/mini-app-sdk`, initializes its provider, an
 
 An ordinary browser receives an explicit unavailable message. The MVP never invents a wallet address, balance, transaction, or successful blockchain payment.
 
-The UI can save a **planned NIM commitment**, but it deliberately does not send NIM yet: a production escrow/reward recipient and resolution policy have not been configured. Before enabling transactions, configure an appropriate recipient/contract strategy, add backend reconciliation, test the wallet confirmation flow in Nimiq Pay, and persist transaction hashes server-side.
+The reward flow requests a direct NIM transfer to a recipient explicitly entered by the user. Nimiq Pay presents the final transaction for wallet approval, and ZERO 2 HERO records the event only when the provider returns a serialized transaction reference. The transfer does not buy XP or unlock Levels. The optional `VITE_NIMIQ_REWARD_RECIPIENT` build variable can prefill a known recipient, but the value remains visible and editable for confirmation.
 
-No environment variables or secrets are required for this MVP.
+No secrets are required for the Nimiq flow. A physical Nimiq Pay test is still required before claiming that wallet connection and transfer work in production.
 
 ## Known limitations
 
@@ -89,7 +89,7 @@ No environment variables or secrets are required for this MVP.
 - Deterministic templates replace AI-generated planning for reliability and zero-key setup.
 - Public Journey URLs require hosted persistence before they can reliably show a Journey on another device or to another account.
 - Community verification, escrow, payouts, followers, backing, and messaging are future work.
-- A real NIM transfer is intentionally disabled until its recipient and resolution rules are configured.
+- NIM rewards are direct, irreversible transfers rather than escrow. Refunds, conditional release, and backend reconciliation are outside this MVP.
 
 ## Competition readiness checklist
 
@@ -97,13 +97,14 @@ No environment variables or secrets are required for this MVP.
 - [x] Journey creation → plan → approval → dashboard works
 - [x] Mission → proof → XP progression works
 - [x] Public Journey presentation works
-- [x] Nimiq SDK integration boundary is present and honest
+- [x] Nimiq SDK wallet connection and direct-transfer request are implemented
+- [x] Public repository includes the required MIT license
 - [x] Mobile and desktop layouts are responsive
 - [x] Tests, lint, and production build are available
-- [ ] Deploy to HTTPS hosting
+- [x] Deploy to HTTPS hosting
 - [ ] Register/open the domain as a Nimiq Pay Mini App
 - [ ] Validate `listAccounts` on physical iOS/Android Nimiq Pay
-- [ ] Choose and implement the competition-safe NIM transfer/reward recipient flow
+- [x] Implement a direct, user-confirmed NIM reward transfer without coupling money to XP
 - [ ] Add hosted persistence and proof storage
 - [ ] Recruit at least 25 legitimate wallet users and collect feedback
 - [ ] Record submission demo media and publish promotion links

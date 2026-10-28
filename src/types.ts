@@ -49,6 +49,8 @@ export interface RewardEvent {
   detail: string
   createdAt: string
   txHash?: string
+  transactionReference?: string
+  recipient?: string
 }
 
 export interface Journey {

@@ -5,12 +5,12 @@ export interface WalletState {
   message?: string
 }
 
-type NimiqAccount = { address: string; label?: string }
-type TransactionResult = { hash?: string } | { error: string }
+type ErrorResponse = { error: unknown }
+type TransactionResult = string | ErrorResponse
 
 interface NimiqProvider {
-  listAccounts(): Promise<NimiqAccount[] | { error: string }>
-  sendBasicTransaction(request: { sender: string; recipient: string; value: number; fee?: number }): Promise<TransactionResult>
+  listAccounts(): Promise<string[] | ErrorResponse>
+  sendBasicTransaction(request: { recipient: string; value: number; fee?: number }): Promise<TransactionResult>
 }
 
 let provider: NimiqProvider | null = null
@@ -23,16 +23,24 @@ export async function connectWallet(): Promise<WalletState> {
     if (!Array.isArray(result) || result.length === 0) {
       return { status: 'unavailable', message: 'Open this app inside Nimiq Pay and approve an account.' }
     }
-    return { status: 'connected', address: result[0].address, label: result[0].label || 'Nimiq account' }
+    return { status: 'connected', address: result[0], label: 'Nimiq account' }
   } catch {
     return { status: 'unavailable', message: 'Wallet connection is available when this Mini App runs inside Nimiq Pay.' }
   }
 }
 
-export async function sendCommitment(sender: string, recipient: string, nim: number): Promise<{ hash: string }> {
+export async function sendCommitment(recipient: string, nim: number): Promise<{ reference: string }> {
   if (!provider) throw new Error('Connect a Nimiq wallet first.')
-  const result = await provider.sendBasicTransaction({ sender, recipient, value: Math.round(nim * 100_000) })
-  if ('error' in result) throw new Error(result.error)
-  if (!result.hash) throw new Error('The wallet did not return a transaction hash.')
-  return { hash: result.hash }
+  if (!recipient.trim()) throw new Error('Enter a Nimiq recipient address.')
+  if (!Number.isFinite(nim) || nim <= 0) throw new Error('Enter a valid NIM amount.')
+  const result = await provider.sendBasicTransaction({ recipient: recipient.trim(), value: Math.round(nim * 100_000) })
+  if (typeof result !== 'string') throw new Error(readProviderError(result.error))
+  if (!result) throw new Error('The wallet did not return a transaction reference.')
+  return { reference: result }
+}
+
+function readProviderError(error: unknown) {
+  if (typeof error === 'string') return error
+  if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') return error.message
+  return 'The wallet declined or could not complete the transaction.'
 }
